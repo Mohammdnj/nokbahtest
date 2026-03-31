@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="60" fill="#F5F0EB"/>
+  <!-- Face -->
+  <circle cx="60" cy="55" r="28" fill="#D4A574"/>
+  <!-- Shimagh (red/white) -->
+  <path d="M32 48 C32 30, 88 30, 88 48 L88 42 C88 24, 32 24, 32 42Z" fill="white"/>
+  <path d="M30 48 L90 48 L90 55 C90 55, 75 52, 60 55 C45 52, 30 55, 30 55Z" fill="white"/>
+  <!-- Agal (black band) -->
+  <rect x="32" y="44" width="56" height="4" rx="2" fill="#2D2D2D"/>
+  <!-- Eyes -->
+  <ellipse cx="48" cy="55" rx="3" ry="3.5" fill="#2D2D2D"/>
+  <ellipse cx="72" cy="55" rx="3" ry="3.5" fill="#2D2D2D"/>
+  <!-- Eyebrows -->
+  <path d="M42 49 Q48 46 54 49" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M66 49 Q72 46 78 49" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M58 58 Q60 63 62 58" stroke="#B8926A" stroke-width="1.5" fill="none"/>
+  <!-- Smile -->
+  <path d="M50 67 Q60 74 70 67" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Beard -->
+  <path d="M40 65 Q42 80, 60 82 Q78 80, 80 65" fill="#3D2B1F" opacity="0.3"/>
+  <!-- Thobe (white garment) -->
+  <path d="M25 95 Q25 80, 60 78 Q95 80, 95 95 L95 120 L25 120Z" fill="white"/>
+  <path d="M25 95 Q25 80, 60 78 Q95 80, 95 95 L95 120 L25 120Z" stroke="#E8E0D8" stroke-width="1" fill="none"/>
+</svg>

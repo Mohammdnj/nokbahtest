@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+deploy.tar.gz
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+backend/storage/
+backend/uploads/
+backend/.env
+*.env
