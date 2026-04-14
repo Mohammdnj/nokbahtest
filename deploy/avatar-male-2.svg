@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="60" fill="#EBF0F5"/>
+  <!-- Face -->
+  <circle cx="60" cy="55" r="28" fill="#C8956C"/>
+  <!-- Ghutra (white) -->
+  <path d="M32 48 C32 30, 88 30, 88 48 L88 42 C88 24, 32 24, 32 42Z" fill="white"/>
+  <path d="M30 48 L90 48 L90 55 C90 55, 75 52, 60 55 C45 52, 30 55, 30 55Z" fill="white"/>
+  <!-- Agal -->
+  <rect x="32" y="44" width="56" height="4" rx="2" fill="#1A1A1A"/>
+  <!-- Eyes -->
+  <ellipse cx="48" cy="55" rx="3" ry="3" fill="#1A1A1A"/>
+  <ellipse cx="72" cy="55" rx="3" ry="3" fill="#1A1A1A"/>
+  <!-- Eyebrows -->
+  <path d="M42 50 Q48 47 54 50" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M66 50 Q72 47 78 50" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M58 58 Q60 63 62 58" stroke="#A8825A" stroke-width="1.5" fill="none"/>
+  <!-- Smile -->
+  <path d="M52 66 Q60 72 68 66" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Mustache -->
+  <path d="M48 64 Q60 60 72 64" stroke="#3D2B1F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Thobe -->
+  <path d="M25 95 Q25 80, 60 78 Q95 80, 95 95 L95 120 L25 120Z" fill="white"/>
+  <path d="M25 95 Q25 80, 60 78 Q95 80, 95 95 L95 120 L25 120Z" stroke="#DDD8D2" stroke-width="1" fill="none"/>
+</svg>
