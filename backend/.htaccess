@@ -1,11 +1,23 @@
 RewriteEngine On
+
+# Route /api/contracts/commercial/{action} -> /api/commercial-contract.php?action={action}
+RewriteRule ^api/contracts/commercial/([a-z\-]+)/?$ api/commercial-contract.php?action=$1 [L,QSA]
+
+# Route /api/lookups/{action} -> /api/lookups.php?action={action}
+RewriteRule ^api/lookups/([a-z\-]+)/?$ api/lookups.php?action=$1 [L,QSA]
+
+# Default: route /api/{name} -> /api/{name}.php (and preserve query string)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^api/(.*)$ api/$1.php [L,QSA]
 
-# Deny access to config and middleware
-<FilesMatch "\.(env|json)$">
-    Deny from all
+# Deny access to sensitive files
+<FilesMatch "\.(env|json|sql)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.">
+    Require all denied
 </FilesMatch>
 
 <IfModule mod_headers.c>

@@ -6,17 +6,27 @@ import { api } from "./api";
 interface User {
   id: number;
   name: string;
-  email: string;
+  phone: string;
+  email?: string;
   role: string;
+}
+
+interface OtpRequestResult {
+  phone: string;
+  purpose: "register" | "login" | "reset";
+  sms_sent: boolean;
+  needs_verification?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, phone: string) => Promise<void>;
-  logout: () => void;
   isLoading: boolean;
+  register: (name: string, phone: string, password: string, email?: string) => Promise<OtpRequestResult>;
+  login: (phone: string, password: string) => Promise<OtpRequestResult>;
+  verifyOtp: (phone: string, code: string, purpose: string) => Promise<User>;
+  resendOtp: (phone: string, purpose: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,18 +52,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const data = await api.post("auth?action=login", { email, password });
-    localStorage.setItem("token", data.token);
-    setToken(data.token);
-    setUser(data.user);
+  const register = async (name: string, phone: string, password: string, email?: string) => {
+    return await api.post("auth?action=register", { name, phone, password, email });
   };
 
-  const register = async (name: string, email: string, password: string, phone: string) => {
-    const data = await api.post("auth?action=register", { name, email, password, phone });
+  const login = async (phone: string, password: string) => {
+    return await api.post("auth?action=login", { phone, password });
+  };
+
+  const verifyOtp = async (phone: string, code: string, purpose: string) => {
+    const data = await api.post("auth?action=verify-otp", { phone, code, purpose });
     localStorage.setItem("token", data.token);
     setToken(data.token);
     setUser(data.user);
+    return data.user;
+  };
+
+  const resendOtp = async (phone: string, purpose: string) => {
+    await api.post("auth?action=resend-otp", { phone, purpose });
   };
 
   const logout = () => {
@@ -63,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, isLoading, register, login, verifyOtp, resendOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

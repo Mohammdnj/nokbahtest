@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 const ibmPlexArabic = localFont({
@@ -35,8 +36,10 @@ export default function RootLayout({
       className={`${ibmPlexArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-[family-name:var(--font-ibm-arabic)]">
-        {children}
-        <WhatsAppButton />
+        <AuthProvider>
+          {children}
+          <WhatsAppButton />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,16 +1,44 @@
 "use client";
 import React, { useState } from "react";
-import { cn } from "@/lib/utils";
-import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { IconEye, IconEyeOff, IconLoader2 } from "@tabler/icons-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [showPass, setShowPass] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("login submitted");
+    setError("");
+
+    if (!/^5\d{8}$/.test(phone)) {
+      setError("رقم الجوال يجب أن يبدأ بـ 5 ويتكون من 9 أرقام");
+      return;
+    }
+    if (password.length < 6) {
+      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await login(phone, password);
+      sessionStorage.setItem("otp_phone", result.phone);
+      sessionStorage.setItem("otp_purpose", result.purpose);
+      router.push("/verify-otp");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,6 +71,8 @@ export default function LoginPage() {
                       placeholder="5XXXXXXXX"
                       maxLength={9}
                       dir="ltr"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
                       className="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
                     />
                   </div>
@@ -60,6 +90,8 @@ export default function LoginPage() {
                     <input
                       type={showPass ? "text" : "password"}
                       placeholder="كلمة المرور"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
                     />
                     <button
@@ -83,11 +115,19 @@ export default function LoginPage() {
                   </a>
                 </div>
 
+                {error && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
+
                 {/* Submit */}
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-emerald-600 py-3 text-center text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98]"
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-center text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 >
+                  {loading && <IconLoader2 className="size-4 animate-spin" />}
                   تسجيل الدخول
                 </button>
               </form>

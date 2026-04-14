@@ -11,9 +11,9 @@ if (file_exists($envFile)) {
 }
 
 $DB_HOST = getenv('DB_HOST') ?: 'localhost';
-$DB_NAME = getenv('DB_NAME') ?: 'nokba';
-$DB_USER = getenv('DB_USER') ?: 'root';
-$DB_PASS = getenv('DB_PASS') ?: '';
+$DB_NAME = getenv('DB_NAME') ?: 'u902557766_nokbh';
+$DB_USER = getenv('DB_USER') ?: 'u902557766_Mnajashi122';
+$DB_PASS = getenv('DB_PASS') ?: '@Mm101010';
 
 try {
     $pdo = new PDO(
