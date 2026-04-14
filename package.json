@@ -1,0 +1,10 @@
+{
+  "name": "nokba",
+  "version": "1.0.0",
+  "description": "النخبة - عقود إيجار إلكترونية موثقة",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Using pre-built deploy/ folder — no build needed on server'",
+    "postinstall": "echo 'Nothing to install'"
+  }
+}
