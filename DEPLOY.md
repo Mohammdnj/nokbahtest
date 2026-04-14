@@ -1,4 +1,4 @@
-# Deployment to Hostinger (demo2.fmistsolutions.com)
+# Deployment to Hostinger (demo3.fmistsolutions.com)
 
 This is a static Next.js frontend + PHP backend that share the same domain.
 Frontend lives at `public_html/`, backend lives inside the same folder.
@@ -13,7 +13,7 @@ Frontend calls `/api/*` which is rewritten by `.htaccess` to the PHP files.
 ### 2. Clone the repo via SSH
 ```bash
 ssh -p 65002 u902557766@147.93.49.196
-cd ~/domains/demo2.fmistsolutions.com
+cd ~/domains/demo3.fmistsolutions.com
 rm -rf public_html
 git clone https://github.com/Mohammdnj/nokbahtest.git public_html
 cd public_html
@@ -34,7 +34,7 @@ Copy the frontend static files and backend PHP files into the web root.
 On Hostinger, `public_html/` IS the web root. So:
 
 ```bash
-# From inside ~/domains/demo2.fmistsolutions.com/public_html
+# From inside ~/domains/demo3.fmistsolutions.com/public_html
 # Move static frontend files up
 cp -r frontend/out/* .
 cp -r frontend/out/.* . 2>/dev/null || true
@@ -60,7 +60,7 @@ DB_USER=u902557766_Mnajashi122
 DB_PASS=@Mm101010
 JWT_SECRET=replace-with-random-64-char-string
 JWT_EXPIRY=86400
-ALLOWED_ORIGINS=https://demo2.fmistsolutions.com,https://www.demo2.fmistsolutions.com
+ALLOWED_ORIGINS=https://demo3.fmistsolutions.com,https://www.demo3.fmistsolutions.com
 SMS_API_KEY=ltO6o19GrWxaRMZF7EehTzfplPA6UPBLjU0scnD6
 SMS_API_SECRET=lS4wV9edqMR6jzt1qpC3rcDap6i3zXe3GhPxx3wKMy2PZx9OphBdHu1Unzfo6OKuIF7Yu8niP76qf8dHXcRojB2FoJBNHLg4unvk
 SMS_SENDER=WillEDU
@@ -85,8 +85,8 @@ After flattening the layout, `config/` lives at `public_html/config/`, so
 `__DIR__ . '/../.env'` resolves to `public_html/.env` ✓ — no change needed.
 
 ### 7. Verify
-- Open `https://demo2.fmistsolutions.com/` → landing page should load
-- Open `https://demo2.fmistsolutions.com/api/auth?action=me` → should return
+- Open `https://demo3.fmistsolutions.com/` → landing page should load
+- Open `https://demo3.fmistsolutions.com/api/auth?action=me` → should return
   `{"error":"Token required"}` with 401 (confirms PHP + routing work)
 - Try register → should receive SMS OTP on the phone via 4jawaly
 
@@ -94,7 +94,7 @@ After flattening the layout, `config/` lives at `public_html/config/`, so
 
 ```bash
 ssh -p 65002 u902557766@147.93.49.196
-cd ~/domains/demo2.fmistsolutions.com/public_html
+cd ~/domains/demo3.fmistsolutions.com/public_html
 git pull
 cd frontend && npm install && npm run build && cd ..
 cp -rf frontend/out/* .

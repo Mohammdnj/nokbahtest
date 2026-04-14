@@ -2,7 +2,7 @@
 // When frontend + backend share the same origin (Hostinger setup),
 // the browser won't even send an Origin header for same-origin requests,
 // so CORS isn't required. For cross-origin callers we allow the configured list.
-$defaultAllowed = 'http://localhost:3000,http://localhost:3002,https://demo2.fmistsolutions.com,https://www.demo2.fmistsolutions.com';
+$defaultAllowed = 'http://localhost:3000,http://localhost:3002,https://demo3.fmistsolutions.com,https://www.demo3.fmistsolutions.com';
 $allowedOrigins = array_map('trim', explode(',', getenv('ALLOWED_ORIGINS') ?: $defaultAllowed));
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
