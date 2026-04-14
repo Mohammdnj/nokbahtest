@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+// Defaults to relative "/api" so frontend + backend can live on the same domain.
+// Override via NEXT_PUBLIC_API_URL at build time for split deployments.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token =
