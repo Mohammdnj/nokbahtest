@@ -19,9 +19,14 @@ const ibmPlexArabic = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "نقبة — عقد إيجار إلكتروني موثّق من شبكة إيجار",
+  title: "النخبة - سهلنا لك عقود الايجار",
   description:
     "وثّق عقدك الإيجاري بكل سهولة وأنت في مكانك خلال 25 دقيقة. خدمة احترافية معتمدة من شبكة إيجار لجميع مناطق المملكة.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
