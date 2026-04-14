@@ -9,7 +9,7 @@ interface SSEOptions {
   onError?: () => void;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://alnokbh.sa/api";
 
 export function useSSE(options: SSEOptions) {
   const eventSourceRef = useRef<EventSource | null>(null);

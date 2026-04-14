@@ -1,6 +1,5 @@
-// Defaults to relative "/api" so frontend + backend can live on the same domain.
-// Override via NEXT_PUBLIC_API_URL at build time for split deployments.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+// Absolute URL so Hostinger + static export both work without path-resolution issues.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://alnokbh.sa/api";
 
 async function parseResponse(res: Response) {
   const text = await res.text();
