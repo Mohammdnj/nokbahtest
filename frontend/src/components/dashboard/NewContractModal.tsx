@@ -396,37 +396,38 @@ function InstructionsModal({
           <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-4 sm:px-8 sm:pt-5">
             {/* Timeline of 6 steps */}
             <div className="rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-4 dark:border-neutral-800/60 dark:bg-neutral-800/30">
-            <div className="relative">
-              {/* connecting line */}
-              <div className="absolute right-4 top-4 bottom-4 w-0.5 bg-emerald-200 dark:bg-emerald-900/40" />
-              <ul className="space-y-3">
-                {wizardSteps.map((step, idx) => {
-                  const Icon = step.Icon;
-                  return (
-                    <motion.li
-                      key={step.num}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="relative flex items-center gap-3"
-                    >
-                      <div className="relative z-10 flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-[#0b7a5a] dark:bg-neutral-900">
-                        <Icon className="size-4 text-[#0b7a5a] dark:text-emerald-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                          {step.num}. {step.label}
-                        </p>
-                      </div>
-                      <span className="text-[10px] text-neutral-400">
-                        خطوة {step.num}/6
-                      </span>
-                    </motion.li>
-                  );
-                })}
-              </ul>
+              <p className="mb-4 text-[11px] font-bold text-neutral-500 dark:text-neutral-400">
+                الرحلة كاملة (6 خطوات)
+              </p>
+              <div className="relative">
+                {/* connecting vertical line between numbered bullets */}
+                <div className="absolute right-[15px] top-4 bottom-4 w-0.5 bg-emerald-200 dark:bg-emerald-900/40" />
+                <ul className="space-y-4">
+                  {wizardSteps.map((step, idx) => {
+                    const Icon = step.Icon;
+                    return (
+                      <motion.li
+                        key={step.num}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="relative flex items-center gap-3"
+                      >
+                        <div className="relative z-10 flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#0b7a5a] ring-2 ring-[#0b7a5a] dark:bg-neutral-900 dark:text-emerald-400">
+                          {step.num}
+                        </div>
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <Icon className="size-4 flex-shrink-0 text-[#0b7a5a] dark:text-emerald-400" />
+                          <p className="truncate text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                            {step.label}
+                          </p>
+                        </div>
+                      </motion.li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
-          </div>
 
           {/* Requirements checklist */}
           <div className="mt-5">

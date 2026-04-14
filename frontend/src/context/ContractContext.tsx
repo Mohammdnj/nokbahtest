@@ -43,6 +43,18 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       setContractId(body.contract_id);
       setContractNumber(body.contract_number);
       setCurrentStep(body.current_step ?? 1);
+
+      // If the backend resumed an existing draft, fetch its data so the form
+      // is prefilled and the user lands on the step they left off at.
+      if (body.resumed && body.contract_id) {
+        try {
+          const existing = await api.get(`contracts/commercial/get?contract_id=${body.contract_id}`);
+          const full = existing.data ?? existing;
+          setData(full);
+        } catch {
+          // If load fails we still keep the draft id so the user can edit.
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إنشاء العقد");
       throw err;

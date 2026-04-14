@@ -1,10 +1,19 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Pricing() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const handleClick = () => {
+    router.push(user ? "/dashboard/" : "/login/");
+  };
+
   return (
     <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between px-5 py-12 md:px-8 md:py-24" dir="rtl">
       <motion.div
@@ -108,6 +117,7 @@ export default function Pricing() {
             </div>
             <div>
               <button
+                onClick={handleClick}
                 className={cn(
                   "mt-8 block w-full rounded-xl px-3.5 py-3 text-center text-sm font-bold transition-all duration-200 active:scale-[0.98] sm:mt-10",
                   tier.featured

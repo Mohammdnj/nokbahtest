@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { IconArrowRight, IconMenu2, IconCircleCheck } from "@tabler/icons-react";
+import { IconArrowRight, IconMenu2, IconCircleCheck, IconAlertTriangle } from "@tabler/icons-react";
 import { ContractProvider, useContract } from "@/context/ContractContext";
 import { useAuth } from "@/lib/auth-context";
 import Stepper from "@/components/contract/Stepper";
@@ -30,6 +30,7 @@ function CommercialContractInner() {
 
   const [success, setSuccess] = useState<{ number: string; fees: number } | null>(null);
   const [booted, setBooted] = useState(false);
+  const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,7 +50,9 @@ function CommercialContractInner() {
         } else {
           await createDraft();
         }
-      } catch {}
+      } catch (e) {
+        setBootError(e instanceof Error ? e.message : "فشل إنشاء العقد");
+      }
       setBooted(true);
     };
     boot();
@@ -75,6 +78,10 @@ function CommercialContractInner() {
 
   if (success) {
     return <SuccessScreen contractNumber={success.number} totalFees={success.fees} />;
+  }
+
+  if (bootError) {
+    return <LimitReachedScreen message={bootError} />;
   }
 
   return (
@@ -190,7 +197,7 @@ function SuccessScreen({ contractNumber, totalFees }: { contractNumber: string; 
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/dashboard/")}
             className="w-full rounded-full bg-[#0b7a5a] py-3 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20 transition-all hover:bg-[#0a6b4f]"
           >
             الذهاب للوحة التحكم
@@ -202,6 +209,48 @@ function SuccessScreen({ contractNumber, totalFees }: { contractNumber: string; 
             className="w-full rounded-full border-2 border-[#25D366] py-3 text-sm font-bold text-[#25D366] transition-all hover:bg-[#25D366]/5"
           >
             مشاركة عبر واتساب
+          </a>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function LimitReachedScreen({ message }: { message: string }) {
+  const router = useRouter();
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-5 dark:bg-neutral-950" dir="rtl">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl dark:bg-neutral-900"
+      >
+        <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-3xl bg-amber-100 dark:bg-amber-900/40">
+          <IconAlertTriangle className="size-10 text-amber-600 dark:text-amber-400" />
+        </div>
+
+        <h1 className="text-xl font-bold text-neutral-900 md:text-2xl dark:text-white">
+          لا يمكن إنشاء عقد جديد الآن
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+          {message}
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3">
+          <button
+            onClick={() => router.push("/dashboard/orders/")}
+            className="w-full rounded-2xl bg-[#0b7a5a] py-3 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20 transition-all hover:bg-[#0a6b4f] active:scale-[0.98]"
+          >
+            عرض عقودي السابقة
+          </button>
+          <a
+            href="https://wa.me/966563214000?text=%D8%A7%D8%AD%D8%AA%D8%A7%D8%AC+%D9%85%D8%B3%D8%A7%D8%B9%D8%AF%D8%A9"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full rounded-2xl border-2 border-[#25D366] py-3 text-sm font-bold text-[#25D366] transition-all hover:bg-[#25D366]/5"
+          >
+            تواصل عبر واتساب
           </a>
         </div>
       </motion.div>

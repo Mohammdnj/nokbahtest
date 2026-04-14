@@ -2,10 +2,23 @@
 import { cn } from "@/lib/utils";
 import { IconMessageCircleQuestion } from "@tabler/icons-react";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { HiArrowRight } from "react-icons/hi2";
 import { motion } from "motion/react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function CTA() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const handleCreate = () => {
+    router.push(user ? "/dashboard/" : "/login/");
+  };
+
+  const handleContact = () => {
+    window.open("https://wa.me/966563214000?text=" + encodeURIComponent("السلام عليكم"), "_blank");
+  };
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 30 }}
@@ -35,11 +48,17 @@ export default function CTA() {
         </p>
 
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <button className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-700 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-emerald-500/20 transition-all hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] group md:mt-8 md:text-base">
+          <button
+            onClick={handleCreate}
+            className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-700 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-emerald-500/20 transition-all hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] group md:mt-8 md:text-base"
+          >
             <span>أنشئ عقدك الآن</span>
             <HiArrowRight className="mt-0.5 h-3.5 w-3.5 rotate-180 text-white transition-transform duration-200 group-hover:-translate-x-1" />
           </button>
-          <button className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-700 shadow-sm transition-all hover:bg-neutral-50 active:scale-[0.98] group sm:mt-6 md:mt-8 md:text-base dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700">
+          <button
+            onClick={handleContact}
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-700 shadow-sm transition-all hover:bg-neutral-50 active:scale-[0.98] group sm:mt-6 md:mt-8 md:text-base dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          >
             <span>تواصل معنا</span>
             <IconMessageCircleQuestion className="mt-0.5 h-4 w-4 text-neutral-500 transition-transform duration-200 group-hover:-translate-x-1 dark:text-neutral-400" />
           </button>

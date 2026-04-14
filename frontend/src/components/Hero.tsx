@@ -1,10 +1,19 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { NoiseBackground } from "@/components/ui/noise-background";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Hero() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const handleStart = () => {
+    router.push(user ? "/dashboard/" : "/login/");
+  };
+
   return (
     <div className="relative w-full overflow-hidden pt-8 pb-4 md:pt-20 lg:pt-28" dir="rtl">
       {/* Background glow */}
@@ -70,7 +79,10 @@ export default function Hero() {
               "rgb(5, 150, 105)",
             ]}
           >
-            <button className="h-full w-full cursor-pointer rounded-full bg-linear-to-r from-neutral-100 via-neutral-100 to-white px-5 py-2.5 text-sm font-medium text-black shadow-[0px_2px_0px_0px_var(--color-neutral-50)_inset,0px_0.5px_1px_0px_var(--color-neutral-400)] transition-all duration-100 active:scale-98 md:px-6 md:text-base dark:from-black dark:via-black dark:to-neutral-900 dark:text-white dark:shadow-[0px_1px_0px_0px_var(--color-neutral-950)_inset,0px_1px_0px_0px_var(--color-neutral-800)]">
+            <button
+              onClick={handleStart}
+              className="h-full w-full cursor-pointer rounded-full bg-linear-to-r from-neutral-100 via-neutral-100 to-white px-5 py-2.5 text-sm font-medium text-black shadow-[0px_2px_0px_0px_var(--color-neutral-50)_inset,0px_0.5px_1px_0px_var(--color-neutral-400)] transition-all duration-100 active:scale-98 md:px-6 md:text-base dark:from-black dark:via-black dark:to-neutral-900 dark:text-white dark:shadow-[0px_1px_0px_0px_var(--color-neutral-950)_inset,0px_1px_0px_0px_var(--color-neutral-800)]"
+            >
               أنشئ عقدك الآن &larr;
             </button>
           </NoiseBackground>

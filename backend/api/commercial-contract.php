@@ -22,6 +22,40 @@ function generate_contract_number(): string {
 if ($method === 'POST' && $action === 'create') {
     global $pdo, $userId;
 
+    // Rule 1: if user already has an open draft, return it instead of creating a new one
+    $stmt = $pdo->prepare("
+        SELECT id, contract_number, current_step
+        FROM commercial_contracts
+        WHERE user_id = ? AND status = 'draft'
+        ORDER BY id DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$userId]);
+    $existingDraft = $stmt->fetch();
+    if ($existingDraft) {
+        json_success([
+            'contract_id' => (int)$existingDraft['id'],
+            'contract_number' => $existingDraft['contract_number'],
+            'current_step' => (int)$existingDraft['current_step'],
+            'resumed' => true,
+        ], 200);
+    }
+
+    // Rule 2: hard limit of 4 contracts per calendar day (any status)
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS c
+        FROM commercial_contracts
+        WHERE user_id = ? AND DATE(created_at) = CURDATE()
+    ");
+    $stmt->execute([$userId]);
+    $todayCount = (int)($stmt->fetch()['c'] ?? 0);
+    if ($todayCount >= 4) {
+        json_error('وصلت للحد الأقصى 4 عقود في اليوم الواحد. حاول مرة ثانية غداً.', 429, [
+            'daily_limit' => 4,
+            'today_count' => $todayCount,
+        ]);
+    }
+
     $contractNumber = generate_contract_number();
     $stmt = $pdo->prepare("INSERT INTO commercial_contracts (user_id, contract_number, status, current_step) VALUES (?, ?, 'draft', 1)");
     $stmt->execute([$userId, $contractNumber]);
@@ -31,6 +65,7 @@ if ($method === 'POST' && $action === 'create') {
         'contract_id' => $id,
         'contract_number' => $contractNumber,
         'current_step' => 1,
+        'resumed' => false,
     ], 201);
 }
 

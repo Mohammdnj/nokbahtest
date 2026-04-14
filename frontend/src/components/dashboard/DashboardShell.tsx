@@ -145,18 +145,11 @@ export default function DashboardShell({
         {/* Top bar — mobile-optimized */}
         <header className="sticky top-0 z-30 border-b border-neutral-200/60 bg-white/85 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-900/85">
           <div className="flex h-[72px] items-center justify-between px-4 md:h-20 md:px-8">
-            {/* Mobile: logo + greeting */}
-            <div className="flex items-center gap-3 md:hidden">
-              <div className="flex size-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0b7a5a] to-emerald-700 p-2 shadow-md shadow-[#0b7a5a]/20">
-                <img src="/icon.png" alt="النخبة" className="h-full w-auto object-contain" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-neutral-400">مرحباً بعودتك</p>
-                <p className="truncate text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  {firstName}
-                </p>
-              </div>
-            </div>
+            {/* Mobile: logo only */}
+            <a href="/dashboard/" className="flex items-center md:hidden">
+              <img src="/logolight.png" alt="النخبة" className="h-14 dark:hidden" />
+              <img src="/logodark.png" alt="النخبة" className="hidden h-14 dark:block" />
+            </a>
             <h1 className="hidden text-lg font-bold text-neutral-800 md:block dark:text-neutral-200">
               {title}
             </h1>
@@ -199,15 +192,14 @@ function MobileBottomNav({
     <nav
       className="fixed inset-x-0 bottom-0 z-40 md:hidden"
       dir="rtl"
-      style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
-      {/* Gradient fade behind the nav so content underneath fades out */}
+      {/* Gradient fade so content under the nav softly disappears */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#faf8ff] via-[#faf8ff]/85 to-transparent dark:from-neutral-950 dark:via-neutral-950/85" />
 
-      {/* Floating pill card, nudged up from the edge */}
       <div className="relative mx-auto max-w-md px-4">
-        <div className="relative rounded-[28px] border border-neutral-200/70 bg-white/98 p-2 shadow-[0_20px_50px_-12px_rgba(11,122,90,0.3),0_0_0_1px_rgba(11,122,90,0.04)] backdrop-blur-2xl dark:border-neutral-800/70 dark:bg-neutral-900/98">
-          <div className="relative grid grid-cols-4 gap-1.5">
+        <div className="relative overflow-hidden rounded-[28px] border border-neutral-200/70 bg-white/95 p-2 shadow-[0_20px_50px_-12px_rgba(11,122,90,0.3),0_0_0_1px_rgba(11,122,90,0.04)] backdrop-blur-2xl dark:border-neutral-800/70 dark:bg-neutral-900/95">
+          <div className="relative grid grid-cols-4 gap-1">
             {navItems.map((item) => {
               const active = pathname === item.href;
               const Icon = item.icon;
@@ -215,50 +207,74 @@ function MobileBottomNav({
                 <button
                   key={item.href}
                   onClick={() => onNavigate(item.href)}
-                  className="group relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-colors active:scale-[0.96]"
+                  className="group relative flex min-h-[66px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-transform active:scale-[0.94]"
                 >
-                  {/* Active tab: solid emerald card */}
+                  {/* Sliding highlight pill — tracks between tabs with spring */}
                   {active && (
                     <motion.div
-                      layoutId="mobile-nav-active"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.55 }}
+                      layoutId="mobile-nav-bg"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[#0b7a5a] to-emerald-800 shadow-lg shadow-[#0b7a5a]/40"
                     />
                   )}
 
+                  {/* Glow aura behind the active icon */}
+                  {active && (
+                    <motion.div
+                      layoutId="mobile-nav-glow"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      className="absolute inset-x-4 -top-3 h-8 rounded-full bg-[#0b7a5a]/40 blur-xl"
+                    />
+                  )}
+
+                  {/* Icon with bounce */}
                   <motion.div
                     animate={{
-                      y: active ? -1 : 0,
-                      scale: active ? 1.1 : 1,
+                      y: active ? -2 : 0,
+                      scale: active ? 1.12 : 1,
                     }}
-                    transition={{ type: "spring", bounce: 0.45, duration: 0.4 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 22,
+                    }}
                     className="relative z-10"
                   >
                     <Icon
                       className={cn(
-                        "size-[22px] transition-colors",
-                        active ? "text-white" : "text-neutral-500 dark:text-neutral-400"
+                        "size-[22px] transition-colors duration-200",
+                        active ? "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)]" : "text-neutral-500 dark:text-neutral-400"
                       )}
                     />
                   </motion.div>
 
-                  <span
+                  {/* Label */}
+                  <motion.span
+                    animate={{
+                      opacity: active ? 1 : 0.75,
+                      fontSize: active ? 11 : 10,
+                    }}
+                    transition={{ duration: 0.2 }}
                     className={cn(
-                      "relative z-10 text-[11px] font-bold leading-none transition-colors",
+                      "relative z-10 font-bold leading-none transition-colors",
                       active ? "text-white" : "text-neutral-500 dark:text-neutral-400"
                     )}
                   >
                     {item.label}
-                  </span>
+                  </motion.span>
 
-                  {/* Small dot indicator below active tab (extra visual cue) */}
-                  {active && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="relative z-10 mt-0.5 block size-1 rounded-full bg-white"
-                    />
-                  )}
+                  {/* Active dot */}
+                  <AnimatePresence>
+                    {active && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ delay: 0.15, type: "spring", bounce: 0.6 }}
+                        className="relative z-10 block size-1 rounded-full bg-white"
+                      />
+                    )}
+                  </AnimatePresence>
                 </button>
               );
             })}
