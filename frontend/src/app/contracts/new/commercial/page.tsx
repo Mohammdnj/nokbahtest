@@ -81,26 +81,35 @@ function CommercialContractInner() {
     <div className="min-h-screen bg-[#faf8ff] dark:bg-neutral-950" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-neutral-200/60 bg-white/90 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-950/90">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
-          <button onClick={() => setMenuOpen()} className="text-neutral-600 dark:text-neutral-400">
-            <IconMenu2 className="size-6" />
-          </button>
-          <h1 className="text-sm font-bold text-neutral-800 md:text-base dark:text-neutral-200">
-            إنشاء عقد إيجار تجاري
-          </h1>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5 md:px-8 md:py-4">
           <button
-            onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400"
+            onClick={() => router.push("/dashboard/")}
+            className="flex size-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            aria-label="رجوع"
           >
             <IconArrowRight className="size-5" />
+          </button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="text-[10px] text-neutral-400">خطوة {currentStep} من 6</p>
+            <h1 className="truncate text-sm font-bold text-neutral-800 md:text-base dark:text-neutral-200">
+              إنشاء عقد إيجار تجاري
+            </h1>
+          </div>
+          <button
+            onClick={() => setMenuOpen()}
+            className="flex size-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          >
+            <IconMenu2 className="size-5" />
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
-        <HeroTagline />
+      <main className="mx-auto max-w-5xl px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6 md:px-8 md:pt-12">
+        <div className="hidden md:block">
+          <HeroTagline />
+        </div>
 
-        <div className="mb-8 md:mb-10">
+        <div className="mb-6 md:mb-10">
           <Stepper currentStep={currentStep} onStepClick={setStep} />
         </div>
 

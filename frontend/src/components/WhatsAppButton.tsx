@@ -1,9 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { IconBrandWhatsapp, IconX } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
 
+// Routes where the floating button should NOT appear (authenticated app area).
+const HIDDEN_PATH_PREFIXES = ["/dashboard", "/contracts", "/verify-otp"];
+
 export default function WhatsAppButton() {
+  const pathname = usePathname() || "";
   const [tooltip, setTooltip] = useState(true);
   const phone = "966563214000";
   const message = encodeURIComponent("السلام عليكم، أبغى أوثّق عقد إيجار");
@@ -15,6 +20,11 @@ export default function WhatsAppButton() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Hide on authenticated app pages — users have in-app WhatsApp links instead.
+  if (HIDDEN_PATH_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return null;
+  }
 
   return (
     <>

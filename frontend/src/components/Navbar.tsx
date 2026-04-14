@@ -53,7 +53,7 @@ export default function Navbar() {
         <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
           <a href="/" className="text-sm font-medium text-neutral-600 transition-colors hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400">الرئيسية</a>
           <a href="#why-us" className="text-sm font-medium text-neutral-600 transition-colors hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400">لماذا نحن</a>
-          <a href="/faq" className="text-sm font-medium text-neutral-600 transition-colors hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400">الأسئلة الشائعة</a>
+          <a href="/faq/" className="text-sm font-medium text-neutral-600 transition-colors hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400">الأسئلة الشائعة</a>
           <a href="/contact" className="text-sm font-medium text-neutral-600 transition-colors hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400">تواصل معنا</a>
         </div>
 
@@ -66,10 +66,10 @@ export default function Navbar() {
             {dark ? <IconSun className="size-4" /> : <IconMoon className="size-4" />}
           </button>
 
-          <a href="/login" className="rounded-lg border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-700 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800">
+          <a href="/login/" className="rounded-lg border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-700 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800">
             دخول
           </a>
-          <a href="/register" className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20">
+          <a href="/register/" className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20">
             إنشاء حساب
           </a>
         </div>
@@ -104,15 +104,15 @@ export default function Navbar() {
             <div className="flex flex-col gap-1 bg-white/95 px-4 py-4 backdrop-blur-xl dark:bg-neutral-950/95">
               <a href="/" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800">الرئيسية</a>
               <a href="#why-us" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800">لماذا نحن</a>
-              <a href="/faq" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800">الأسئلة الشائعة</a>
+              <a href="/faq/" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800">الأسئلة الشائعة</a>
               <a href="/contact" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800">تواصل معنا</a>
 
               <div className="mt-2 border-t border-neutral-200/60 pt-3 dark:border-neutral-800/60">
                 <div className="flex gap-2">
-                  <a href="/login" className="flex-1 rounded-lg border border-neutral-300 py-2.5 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300">
+                  <a href="/login/" className="flex-1 rounded-lg border border-neutral-300 py-2.5 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300">
                     دخول
                   </a>
-                  <a href="/register" className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-emerald-700">
+                  <a href="/register/" className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-emerald-700">
                     إنشاء حساب
                   </a>
                 </div>

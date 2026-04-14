@@ -128,3 +128,14 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbars on horizontally-scrolling rows (stepper, filter pills) */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

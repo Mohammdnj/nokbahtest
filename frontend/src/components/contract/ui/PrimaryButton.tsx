@@ -26,7 +26,7 @@ export default function PrimaryButton({
       onClick={onClick}
       disabled={disabled || loading}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold transition-all active:scale-[0.98] md:min-w-[180px]",
+        "flex w-full items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold transition-all active:scale-[0.98] sm:w-auto md:min-w-[180px]",
         disabled || loading
           ? "cursor-not-allowed bg-neutral-200 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600"
           : "bg-[#0b7a5a] text-white shadow-lg shadow-[#0b7a5a]/20 hover:bg-[#0a6b4f]"

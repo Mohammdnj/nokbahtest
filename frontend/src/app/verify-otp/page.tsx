@@ -1,10 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { IconLoader2, IconArrowRight } from "@tabler/icons-react";
+import { IconLoader2, IconArrowRight, IconDeviceMobile } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { useAuth } from "@/lib/auth-context";
 
 export default function VerifyOtpPage() {
@@ -120,36 +118,47 @@ export default function VerifyOtpPage() {
   const maskedPhone = phone ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : "";
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1" dir="rtl">
-        <div className="mx-auto flex min-h-[calc(100vh-200px)] max-w-md items-center justify-center px-5 py-12">
+    <main className="flex min-h-screen flex-col bg-[#faf8ff] dark:bg-neutral-950" dir="rtl">
+        <header className="sticky top-0 z-30 border-b border-neutral-200/60 bg-white/80 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-900/80">
+          <div className="mx-auto flex h-16 max-w-md items-center justify-center px-5">
+            <a href="/">
+              <img src="/logolight.png" alt="النخبة" className="h-10 dark:hidden" />
+              <img src="/logodark.png" alt="النخبة" className="hidden h-10 dark:block" />
+            </a>
+          </div>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-md flex-1 items-center justify-center px-5 py-8 pb-[max(3rem,env(safe-area-inset-bottom))]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full"
+            className="w-full rounded-3xl bg-white p-6 shadow-[0_10px_40px_-12px_rgba(11,122,90,0.18)] md:p-8 dark:bg-neutral-900"
           >
-            <div className="mb-8 flex justify-center">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40">
-                <svg className="size-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
+            <div className="mb-6 flex justify-center">
+              <motion.div
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+                className="relative flex size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#0b7a5a] to-emerald-700 shadow-lg shadow-[#0b7a5a]/30"
+              >
+                <div className="absolute -inset-2 rounded-[28px] bg-emerald-500/10 blur-xl" />
+                <IconDeviceMobile className="relative size-10 text-white" />
+              </motion.div>
             </div>
 
             <h1 className="text-center text-2xl font-bold text-neutral-900 md:text-3xl dark:text-white">
               تحقق من رقم الجوال
             </h1>
-            <p className="mt-3 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              أدخل الرمز المكون من 4 أرقام الذي أرسلناه إلى
+            <p className="mt-3 text-center text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+              أدخل الرمز المكوّن من 4 أرقام اللي وصلك على
               <br />
               <span dir="ltr" className="font-bold text-neutral-700 dark:text-neutral-300">
                 +{maskedPhone}
               </span>
             </p>
 
-            <div className="mt-8 flex justify-center gap-3" dir="ltr">
+            <div className="mt-8 flex justify-center gap-2.5 sm:gap-3" dir="ltr">
               {digits.map((digit, index) => (
                 <input
                   key={index}
@@ -161,7 +170,7 @@ export default function VerifyOtpPage() {
                   onChange={(e) => handleDigitChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className="size-14 rounded-xl border border-neutral-300 bg-white text-center text-2xl font-bold text-neutral-900 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 md:size-16 md:text-3xl dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                  className="size-16 rounded-2xl border-2 border-neutral-200 bg-white text-center text-3xl font-bold text-neutral-900 shadow-sm transition-all focus:border-[#0b7a5a] focus:outline-none focus:ring-4 focus:ring-[#0b7a5a]/15 sm:size-[68px] dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
               ))}
             </div>
@@ -170,7 +179,7 @@ export default function VerifyOtpPage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
+                className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
               >
                 {error}
               </motion.div>
@@ -179,7 +188,7 @@ export default function VerifyOtpPage() {
             <button
               onClick={() => handleVerify()}
               disabled={loading || digits.some((d) => !d)}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#0b7a5a] text-base font-bold text-white shadow-lg shadow-[#0b7a5a]/25 transition-all hover:bg-[#0a6b4f] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <IconLoader2 className="size-5 animate-spin" />
@@ -195,13 +204,13 @@ export default function VerifyOtpPage() {
               لم يصلك الرمز؟{" "}
               {countdown > 0 ? (
                 <span className="text-neutral-400">
-                  إعادة الإرسال خلال {countdown} ثانية
+                  إعادة الإرسال خلال <span className="font-bold">{countdown}</span> ثانية
                 </span>
               ) : (
                 <button
                   onClick={handleResend}
                   disabled={resending}
-                  className="font-bold text-emerald-600 hover:underline disabled:opacity-60 dark:text-emerald-400"
+                  className="font-bold text-[#0b7a5a] hover:underline disabled:opacity-60 dark:text-emerald-400"
                 >
                   {resending ? "جاري الإرسال..." : "إعادة الإرسال"}
                 </button>
@@ -213,13 +222,11 @@ export default function VerifyOtpPage() {
                 onClick={() => router.back()}
                 className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
               >
-                رجوع
+                تعديل رقم الجوال
               </button>
             </div>
           </motion.div>
         </div>
-      </main>
-      <Footer />
-    </>
+    </main>
   );
 }
