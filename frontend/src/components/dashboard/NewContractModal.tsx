@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -71,6 +71,16 @@ export default function NewContractModal({ open, onClose }: Props) {
   const [propertyType, setPropertyType] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
 
+  // Lock body scroll while modal is open so the dashboard behind doesn't scroll.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   const handleContinue = () => {
     if (!contractType || !propertyType) return;
     setShowInstructions(true);
@@ -104,37 +114,49 @@ export default function NewContractModal({ open, onClose }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: "100%" }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ type: "spring", damping: 25 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 220 }}
+            className="fixed inset-x-0 bottom-0 top-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
             dir="rtl"
           >
-            <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-10 dark:bg-neutral-900">
-              <button
-                onClick={handleClose}
-                className="absolute top-4 left-4 rounded-full p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
-              >
-                <IconX className="size-5" />
-              </button>
-
-              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
-                <IconFileCertificate className="size-3.5" />
-                بدء طلب جديد
+            <div className="relative flex h-[92vh] w-full max-w-2xl flex-col rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl dark:bg-neutral-900">
+              {/* Sticky header with close + drag handle */}
+              <div className="sticky top-0 z-10 rounded-t-[28px] border-b border-neutral-100 bg-white/95 px-5 pb-4 pt-3 backdrop-blur-xl sm:rounded-t-3xl sm:px-8 sm:pb-5 sm:pt-5 dark:border-neutral-800 dark:bg-neutral-900/95">
+                {/* Drag handle (visual only, mobile) */}
+                <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-neutral-200 sm:hidden dark:bg-neutral-700" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+                      <IconFileCertificate className="size-3" />
+                      بدء طلب جديد
+                    </div>
+                    <h2 className="text-lg font-bold text-neutral-900 sm:text-xl md:text-2xl dark:text-white">
+                      إنشاء عقد إيجار
+                    </h2>
+                    <p className="mt-0.5 text-xs text-neutral-500 sm:text-sm dark:text-neutral-400">
+                      اختر نوع العقد، وخلنا نبدأ معك
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleClose}
+                    className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                    aria-label="إغلاق"
+                  >
+                    <IconX className="size-5" />
+                  </button>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-neutral-900 md:text-2xl dark:text-white">
-                إنشاء عقد إيجار
-              </h2>
-              <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                اختر نوع العقد، وخلنا نبدأ معك خطوة بخطوة
-              </p>
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 sm:px-8 sm:pb-8">
 
               {/* Contract type */}
-              <div className="mt-6">
+              <div>
                 <h3 className="mb-3 text-sm font-bold text-neutral-700 dark:text-neutral-300">
                   نوع العقد
                 </h3>
@@ -231,6 +253,7 @@ export default function NewContractModal({ open, onClose }: Props) {
                   </motion.button>
                 )}
               </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         </>
@@ -331,39 +354,48 @@ function InstructionsModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: "100%" }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 50 }}
-        transition={{ type: "spring", damping: 25 }}
-        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        exit={{ opacity: 0, y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 220 }}
+        className="fixed inset-x-0 bottom-0 top-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
         dir="rtl"
       >
-        <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-10 dark:bg-neutral-900">
-          <button
-            onClick={onClose}
-            className="absolute top-4 left-4 rounded-full p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
-          >
-            <IconX className="size-5" />
-          </button>
-
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
-            <IconShieldCheck className="size-3.5" />
-            قبل أن نبدأ
+        <div className="relative flex h-[92vh] w-full max-w-2xl flex-col rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl dark:bg-neutral-900">
+          {/* Sticky header */}
+          <div className="sticky top-0 z-10 rounded-t-[28px] border-b border-neutral-100 bg-white/95 px-5 pb-4 pt-3 backdrop-blur-xl sm:rounded-t-3xl sm:px-8 sm:pb-5 sm:pt-5 dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-neutral-200 sm:hidden dark:bg-neutral-700" />
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+                  <IconShieldCheck className="size-3" />
+                  قبل أن نبدأ
+                </div>
+                <h2 className="text-lg font-bold text-neutral-900 sm:text-xl md:text-2xl dark:text-white">
+                  الرحلة تتكون من 6 خطوات بسيطة
+                </h2>
+                <p className="mt-0.5 text-xs text-neutral-500 sm:text-sm dark:text-neutral-400">
+                  نقدّر وقتك — جهّز التالي وخلنا نبدأ
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                aria-label="إغلاق"
+              >
+                <IconX className="size-5" />
+              </button>
+            </div>
           </div>
 
-          <h2 className="text-xl font-bold text-neutral-900 md:text-2xl dark:text-white">
-            الرحلة تتكون من 6 خطوات بسيطة
-          </h2>
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            نقدّر وقتك — جهّز التالي وخلنا نبدأ مباشرة
-          </p>
-
-          {/* Timeline of 6 steps */}
-          <div className="mt-6 rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-4 dark:border-neutral-800/60 dark:bg-neutral-800/30">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-4 sm:px-8 sm:pt-5">
+            {/* Timeline of 6 steps */}
+            <div className="rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-4 dark:border-neutral-800/60 dark:bg-neutral-800/30">
             <div className="relative">
               {/* connecting line */}
               <div className="absolute right-4 top-4 bottom-4 w-0.5 bg-emerald-200 dark:bg-emerald-900/40" />
@@ -437,20 +469,25 @@ function InstructionsModal({
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse">
-            <button
-              onClick={onReady}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0b7a5a] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20 transition-all hover:bg-[#0a6b4f] active:scale-[0.98]"
-            >
-              جاهز، نبدأ
-              <IconArrowLeft className="size-4" />
-            </button>
-            <button
-              onClick={onBack}
-              className="flex-1 rounded-2xl border border-neutral-300 py-3.5 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            >
-              رجوع
-            </button>
+          </div>
+
+          {/* Sticky bottom action bar */}
+          <div className="sticky bottom-0 border-t border-neutral-100 bg-white/95 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl sm:rounded-b-3xl sm:px-8 dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="flex flex-col gap-3 sm:flex-row-reverse">
+              <button
+                onClick={onReady}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0b7a5a] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20 transition-all hover:bg-[#0a6b4f] active:scale-[0.98]"
+              >
+                جاهز، نبدأ
+                <IconArrowLeft className="size-4" />
+              </button>
+              <button
+                onClick={onBack}
+                className="flex-1 rounded-2xl border border-neutral-300 py-3.5 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                رجوع
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
