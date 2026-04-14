@@ -1,7 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { IconBuildings, IconMapPin, IconRuler, IconPlus, IconSearch } from "@tabler/icons-react";
+import {
+  IconBuildings,
+  IconMapPin,
+  IconRuler,
+  IconPlus,
+  IconSearch,
+  IconBuildingEstate,
+} from "@tabler/icons-react";
 import { api } from "@/lib/api";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import NewContractModal from "@/components/dashboard/NewContractModal";
@@ -103,8 +110,8 @@ export default function PropertiesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center rounded-3xl bg-white py-16 text-center shadow-sm dark:bg-neutral-900">
-            <div className="mb-4 flex size-20 items-center justify-center rounded-3xl bg-emerald-50 text-4xl dark:bg-emerald-950/40">
-              🏢
+            <div className="mb-4 flex size-20 items-center justify-center rounded-3xl bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+              <IconBuildingEstate className="size-10" />
             </div>
             <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
               {search ? "ما لقينا أي عقارات" : "ما عندك عقارات بعد"}

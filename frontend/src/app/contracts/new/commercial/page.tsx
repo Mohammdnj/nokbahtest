@@ -162,7 +162,7 @@ function SuccessScreen({ contractNumber, totalFees }: { contractNumber: string; 
         </motion.div>
 
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-          تم إنشاء عقدك بنجاح 🎉
+          تم إنشاء عقدك بنجاح
         </h1>
         <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
           سيتم مراجعة بياناتك وتوثيق العقد خلال 30 دقيقة

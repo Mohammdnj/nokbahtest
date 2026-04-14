@@ -8,6 +8,7 @@ import {
   IconFileDescription,
   IconCalendar,
   IconArrowLeft,
+  IconInbox,
 } from "@tabler/icons-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -137,8 +138,8 @@ export default function OrdersPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center rounded-3xl bg-white py-16 text-center shadow-sm dark:bg-neutral-900">
-            <div className="mb-4 flex size-20 items-center justify-center rounded-3xl bg-emerald-50 text-4xl dark:bg-emerald-950/40">
-              📋
+            <div className="mb-4 flex size-20 items-center justify-center rounded-3xl bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+              <IconInbox className="size-10" />
             </div>
             <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
               ما عندك أي طلبات

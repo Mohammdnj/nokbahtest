@@ -10,6 +10,10 @@ import {
   IconWallet,
   IconArrowLeft,
   IconSparkles,
+  IconHome,
+  IconBuildingStore,
+  IconBrandWhatsapp,
+  IconFolderOpen,
 } from "@tabler/icons-react";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -78,7 +82,7 @@ export default function DashboardHome() {
               أهلاً وسهلاً
             </span>
             <h1 className="mt-3 text-2xl font-bold text-white md:text-4xl">
-              حياك عميلنا {firstName} 👋
+              حياك عميلنا {firstName}
             </h1>
             <p className="mt-2 max-w-md text-sm text-white/80 md:text-base">
               جاهز نوثّق لك عقد إيجار جديد خلال 25 دقيقة؟ اضغط زر إنشاء عقد وخلنا نبدأ.
@@ -135,21 +139,21 @@ export default function DashboardHome() {
           <QuickAction
             title="إنشاء عقد سكني"
             description="وثّق عقد إيجار سكني بسرعة"
-            emoji="🏠"
+            Icon={IconHome}
             price="249 ر.س"
             onClick={() => setModalOpen(true)}
           />
           <QuickAction
             title="إنشاء عقد تجاري"
             description="وثّق عقد إيجار تجاري"
-            emoji="🏪"
+            Icon={IconBuildingStore}
             price="349 ر.س"
             onClick={() => setModalOpen(true)}
           />
           <QuickAction
             title="تواصل مع الدعم"
             description="متاحين 24/7"
-            emoji="💬"
+            Icon={IconBrandWhatsapp}
             price="مجاني"
             onClick={() =>
               window.open(
@@ -250,13 +254,13 @@ function StatCard({
 function QuickAction({
   title,
   description,
-  emoji,
+  Icon,
   price,
   onClick,
 }: {
   title: string;
   description: string;
-  emoji: string;
+  Icon: React.ComponentType<{ className?: string }>;
   price: string;
   onClick: () => void;
 }) {
@@ -265,8 +269,8 @@ function QuickAction({
       onClick={onClick}
       className="group flex items-center gap-4 rounded-2xl bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md md:p-5 dark:bg-neutral-900"
     >
-      <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl dark:bg-emerald-950/40">
-        {emoji}
+      <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-[#0b7a5a] transition-colors group-hover:bg-[#0b7a5a] group-hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400">
+        <Icon className="size-6" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="truncate text-sm font-bold text-neutral-900 dark:text-white">{title}</p>
@@ -284,8 +288,8 @@ function RecentContractRow({ contract }: { contract: RecentContract }) {
       onClick={() => router.push(`/dashboard/orders?id=${contract.id}`)}
       className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-4 text-right transition-all hover:border-[#0b7a5a]/30 hover:bg-neutral-50 dark:border-neutral-800/60 dark:bg-neutral-800/30 dark:hover:bg-neutral-800/50"
     >
-      <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-lg dark:bg-emerald-950/40">
-        📄
+      <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+        <IconFileDescription className="size-5" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -321,8 +325,8 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center py-8 text-center md:py-12">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-neutral-100 text-3xl dark:bg-neutral-800">
-        📂
+      <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+        <IconFolderOpen className="size-8" />
       </div>
       <p className="text-sm font-bold text-neutral-800 md:text-base dark:text-neutral-200">{title}</p>
       <p className="mt-1 text-xs text-neutral-500 md:text-sm dark:text-neutral-400">{description}</p>

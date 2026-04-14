@@ -63,7 +63,7 @@ export default function RegisterPage() {
           <div className="flex items-center justify-center px-5 py-12 md:px-12 md:py-20">
             <div className="w-full max-w-md">
               <h1 className="text-2xl font-bold text-neutral-900 md:text-3xl dark:text-white">
-                مرحباً بك 👋
+                مرحباً بك
               </h1>
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                 ادخل البيانات لإنشاء الحساب
