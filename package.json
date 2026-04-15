@@ -1,10 +1,16 @@
 {
   "name": "nokba",
   "version": "1.0.0",
-  "description": "النخبة - عقود إيجار إلكترونية موثقة",
+  "description": "Nokba rental contract platform — pre-built static export in deploy/",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
-    "build": "echo 'Using pre-built deploy/ folder — no build needed on server'",
-    "postinstall": "echo 'Nothing to install'"
+    "build": "echo Pre-built && exit 0",
+    "start": "echo Static site && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
   }
 }
