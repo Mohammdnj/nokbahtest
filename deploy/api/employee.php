@@ -38,21 +38,23 @@ if ($method === 'GET' && $action === 'stats') {
 elseif ($method === 'GET' && $action === 'queue') {
     global $pdo;
 
-    $status = $_GET['status'] ?? 'pending';
+    $status = $_GET['status'] ?? '';
     $limit = min(100, max(1, (int)($_GET['limit'] ?? 50)));
 
-    $allowed = ['pending','in_progress','reviewing','completed','rejected'];
-    if (!in_array($status, $allowed, true)) $status = 'pending';
+    $allowed = ['draft','pending','in_progress','reviewing','completed','active','rejected','cancelled','expired'];
 
-    $stmt = $pdo->prepare("
-        SELECT c.*, u.name AS client_name, u.phone AS client_phone
-        FROM commercial_contracts c
-        LEFT JOIN users u ON c.user_id = u.id
-        WHERE c.status = ?
-        ORDER BY c.created_at ASC
-        LIMIT $limit
-    ");
-    $stmt->execute([$status]);
+    $sql = "SELECT c.*, u.name AS client_name, u.phone AS client_phone
+            FROM commercial_contracts c
+            LEFT JOIN users u ON c.user_id = u.id";
+    $params = [];
+    if ($status && in_array($status, $allowed, true)) {
+        $sql .= " WHERE c.status = ?";
+        $params[] = $status;
+    }
+    $sql .= " ORDER BY c.created_at DESC LIMIT $limit";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     json_success($stmt->fetchAll());
 }
 

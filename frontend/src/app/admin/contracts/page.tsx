@@ -41,7 +41,8 @@ interface Contract {
 
 const filters = [
   { value: "", label: "الكل" },
-  { value: "pending", label: "قيد المراجعة" },
+  { value: "draft", label: "مسودة" },
+  { value: "pending", label: "قيد الانتظار" },
   { value: "in_progress", label: "جاري التنفيذ" },
   { value: "reviewing", label: "مراجعة" },
   { value: "completed", label: "مكتمل" },
