@@ -341,13 +341,4 @@ elseif ($method === 'GET' && $action === 'invoices') {
 else {
     json_error('Unknown action', 404);
 }
-
-// Tiny helper to mirror the one in contract-validate
-function v_required(array $data, array $keys): ?string {
-    foreach ($keys as $key) {
-        if (!isset($data[$key]) || $data[$key] === '' || $data[$key] === null) {
-            return "حقل مطلوب: $key";
-        }
-    }
-    return null;
-}
+// v_required() is defined in middleware/contract-validate.php (already required above).
