@@ -89,7 +89,12 @@ export default function VerifyOtpPage() {
       sessionStorage.setItem("user_first_name", user.name.split(" ")[0]);
       sessionStorage.removeItem("otp_phone");
       sessionStorage.removeItem("otp_purpose");
-      router.push("/dashboard");
+      // Route based on role
+      if (user.role === "admin" || user.role === "employee") {
+        router.push("/admin/");
+      } else {
+        router.push("/dashboard/");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "رمز التحقق غير صحيح");
       setDigits(["", "", "", ""]);

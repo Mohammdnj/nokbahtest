@@ -1,0 +1,276 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  IconGauge,
+  IconFileDescription,
+  IconUsers,
+  IconDiscount2,
+  IconEdit,
+  IconReceipt2,
+  IconListCheck,
+  IconBell,
+  IconLogout2,
+  IconSun,
+  IconMoon,
+} from "@tabler/icons-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
+  { label: "نظرة عامة", href: "/admin/", icon: IconGauge },
+  { label: "العقود", href: "/admin/contracts/", icon: IconFileDescription },
+  { label: "الموظفين", href: "/admin/users/", icon: IconUsers, adminOnly: true },
+  { label: "الخصومات", href: "/admin/discounts/", icon: IconDiscount2, adminOnly: true },
+  { label: "المحتوى", href: "/admin/content/", icon: IconEdit, adminOnly: true },
+  { label: "الفواتير", href: "/admin/invoices/", icon: IconReceipt2 },
+  { label: "قائمة الطلبات", href: "/employee/", icon: IconListCheck, adminOnly: false },
+];
+
+export default function AdminShell({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, logout, isLoading } = useAuth();
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      setDark(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.replace("/login/");
+        return;
+      }
+      if (user.role !== "admin" && user.role !== "employee") {
+        router.replace("/dashboard/");
+      }
+    }
+  }, [isLoading, user, router]);
+
+  const toggleDark = () => {
+    setDark(!dark);
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", !dark ? "dark" : "light");
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login/");
+  };
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] dark:bg-neutral-950">
+        <div className="size-10 animate-spin rounded-full border-2 border-[#0b7a5a] border-t-transparent" />
+      </div>
+    );
+  }
+
+  const isAdmin = user.role === "admin";
+  const visibleItems = navItems.filter((i) => {
+    if (i.adminOnly && !isAdmin) return false;
+    // Employees don't need /admin/* other than contracts
+    if (!isAdmin && i.href.startsWith("/admin/") && i.href !== "/admin/contracts/" && i.href !== "/admin/invoices/") {
+      return false;
+    }
+    return true;
+  });
+
+  const firstName = user.name.split(" ")[0];
+
+  return (
+    <div className="flex min-h-screen bg-[#faf8ff] dark:bg-neutral-950" dir="rtl">
+      {/* Desktop Sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-72 flex-col border-l border-neutral-200/60 bg-white md:flex dark:border-neutral-800/60 dark:bg-neutral-900">
+        <div className="flex h-28 items-center justify-center border-b border-neutral-200/60 px-6 dark:border-neutral-800/60">
+          <img src="/logolight.png" alt="النخبة" className="h-20 dark:hidden" />
+          <img src="/logodark.png" alt="النخبة" className="hidden h-20 dark:block" />
+        </div>
+
+        <div className="px-4 pt-4">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+            {isAdmin ? "لوحة الإدارة" : "لوحة الموظف"}
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 p-4">
+          {visibleItems.map((item) => {
+            const active = pathname === item.href || pathname === item.href.replace(/\/$/, "");
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className={cn(
+                  "relative flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-semibold transition-all",
+                  active
+                    ? "bg-[#0b7a5a] text-white shadow-lg shadow-[#0b7a5a]/20"
+                    : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                )}
+              >
+                <Icon className="size-5" />
+                <span className="flex-1 text-right">{item.label}</span>
+                {active && <div className="size-1.5 rounded-full bg-white" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-neutral-200/60 p-4 dark:border-neutral-800/60">
+          <div className="mb-3 flex items-center gap-3 rounded-2xl bg-neutral-50 p-3 dark:bg-neutral-800/50">
+            <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-[#0b7a5a] to-emerald-600 text-sm font-bold text-white">
+              {firstName.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                {user.name}
+              </p>
+              <p className="truncate text-[10px] font-bold uppercase text-[#0b7a5a] dark:text-emerald-400">
+                {isAdmin ? "مدير" : "موظف"}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={toggleDark}
+              className="flex flex-1 items-center justify-center rounded-xl bg-neutral-100 p-2.5 text-neutral-600 transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+            >
+              {dark ? <IconSun className="size-4" /> : <IconMoon className="size-4" />}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-50 p-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
+            >
+              <IconLogout2 className="size-4" />
+              خروج
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 border-b border-neutral-200/60 bg-white/85 backdrop-blur-xl dark:border-neutral-800/60 dark:bg-neutral-900/85">
+          <div className="flex h-[72px] items-center justify-between px-4 md:h-20 md:px-8">
+            <a href="/admin/" className="flex items-center md:hidden">
+              <img src="/logolight.png" alt="النخبة" className="h-12 dark:hidden" />
+              <img src="/logodark.png" alt="النخبة" className="hidden h-12 dark:block" />
+            </a>
+            <h1 className="hidden text-lg font-bold text-neutral-800 md:block dark:text-neutral-200">
+              {title}
+            </h1>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={toggleDark}
+                className="md:hidden rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                {dark ? <IconSun className="size-5" /> : <IconMoon className="size-5" />}
+              </button>
+              <button className="relative rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
+                <IconBell className="size-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-x-hidden pb-36 md:pb-12">{children}</main>
+      </div>
+
+      {/* Mobile bottom nav — shows first 4 items */}
+      <MobileBottomNav items={visibleItems.slice(0, 4)} pathname={pathname} onNavigate={(h) => router.push(h)} />
+    </div>
+  );
+}
+
+function MobileBottomNav({
+  items,
+  pathname,
+  onNavigate,
+}: {
+  items: NavItem[];
+  pathname: string;
+  onNavigate: (href: string) => void;
+}) {
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 md:hidden"
+      dir="rtl"
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#faf8ff] via-[#faf8ff]/85 to-transparent dark:from-neutral-950 dark:via-neutral-950/85" />
+      <div className="relative mx-auto max-w-md px-4">
+        <div className="relative overflow-hidden rounded-[28px] border border-neutral-200/70 bg-white/95 p-2 shadow-[0_20px_50px_-12px_rgba(11,122,90,0.3)] backdrop-blur-2xl dark:border-neutral-800/70 dark:bg-neutral-900/95">
+          <div className={cn("relative grid gap-1", `grid-cols-${Math.min(items.length, 4)}`)}>
+            {items.map((item) => {
+              const active = pathname === item.href || pathname === item.href.replace(/\/$/, "");
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => onNavigate(item.href)}
+                  className="group relative flex min-h-[66px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-transform active:scale-[0.94]"
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="admin-nav-bg"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[#0b7a5a] to-emerald-800 shadow-lg shadow-[#0b7a5a]/40"
+                    />
+                  )}
+                  <motion.div
+                    animate={{ y: active ? -2 : 0, scale: active ? 1.12 : 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                    className="relative z-10"
+                  >
+                    <Icon className={cn("size-[22px] transition-colors", active ? "text-white" : "text-neutral-500 dark:text-neutral-400")} />
+                  </motion.div>
+                  <motion.span
+                    animate={{ opacity: active ? 1 : 0.75, fontSize: active ? 11 : 10 }}
+                    transition={{ duration: 0.2 }}
+                    className={cn(
+                      "relative z-10 font-bold leading-none transition-colors",
+                      active ? "text-white" : "text-neutral-500 dark:text-neutral-400"
+                    )}
+                  >
+                    {item.label}
+                  </motion.span>
+                  <AnimatePresence>
+                    {active && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ delay: 0.15, type: "spring", bounce: 0.6 }}
+                        className="relative z-10 block size-1 rounded-full bg-white"
+                      />
+                    )}
+                  </AnimatePresence>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}

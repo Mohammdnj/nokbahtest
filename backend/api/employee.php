@@ -1,0 +1,103 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../config/cors.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/../middleware/response.php';
+require_once __DIR__ . '/../middleware/roles.php';
+
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+$auth = require_staff();
+
+// ============ STATS (queue-focused) ============
+if ($method === 'GET' && $action === 'stats') {
+    global $pdo, $auth;
+
+    $stats = [];
+    $stmt = $pdo->query("SELECT COUNT(*) AS c FROM commercial_contracts WHERE status = 'pending'");
+    $stats['pending'] = (int)$stmt->fetch()['c'];
+
+    $stmt = $pdo->query("SELECT COUNT(*) AS c FROM commercial_contracts WHERE status IN ('in_progress','reviewing')");
+    $stats['in_progress'] = (int)$stmt->fetch()['c'];
+
+    $stmt = $pdo->query("SELECT COUNT(*) AS c FROM commercial_contracts WHERE status IN ('completed','active') AND DATE(updated_at) = CURDATE()");
+    $stats['completed_today'] = (int)$stmt->fetch()['c'];
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS c FROM invoices WHERE issued_by = ? AND DATE(created_at) = CURDATE()");
+    $stmt->execute([$auth['user_id']]);
+    $stats['my_invoices_today'] = (int)$stmt->fetch()['c'];
+
+    json_success($stats);
+}
+
+// ============ CONTRACTS QUEUE ============
+elseif ($method === 'GET' && $action === 'queue') {
+    global $pdo;
+
+    $status = $_GET['status'] ?? 'pending';
+    $limit = min(100, max(1, (int)($_GET['limit'] ?? 50)));
+
+    $allowed = ['pending','in_progress','reviewing','completed','rejected'];
+    if (!in_array($status, $allowed, true)) $status = 'pending';
+
+    $stmt = $pdo->prepare("
+        SELECT c.*, u.name AS client_name, u.phone AS client_phone
+        FROM commercial_contracts c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.status = ?
+        ORDER BY c.created_at ASC
+        LIMIT $limit
+    ");
+    $stmt->execute([$status]);
+    json_success($stmt->fetchAll());
+}
+
+elseif ($method === 'GET' && $action === 'contract') {
+    global $pdo;
+    $id = (int)($_GET['id'] ?? 0);
+    if ($id <= 0) json_error('id مطلوب');
+
+    $stmt = $pdo->prepare("
+        SELECT c.*, u.name AS client_name, u.phone AS client_phone, u.email AS client_email
+        FROM commercial_contracts c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.id = ?
+    ");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    if (!$row) json_error('العقد غير موجود', 404);
+
+    json_success($row);
+}
+
+elseif ($method === 'PUT' && $action === 'update-status') {
+    global $pdo, $auth;
+    $data = read_json_body();
+    $id = (int)($data['id'] ?? 0);
+    $status = $data['status'] ?? '';
+    $ejarNumber = $data['ejar_number'] ?? null;
+    $notes = $data['notes'] ?? null;
+
+    $allowed = ['in_progress','reviewing','completed','rejected'];
+    if (!in_array($status, $allowed, true)) json_error('حالة غير مسموحة');
+
+    $stmt = $pdo->prepare("
+        UPDATE commercial_contracts
+        SET status = ?, ejar_number = COALESCE(?, ejar_number)
+        WHERE id = ?
+    ");
+    $stmt->execute([$status, $ejarNumber, $id]);
+
+    $logMsg = "تم تحديث الحالة إلى $status";
+    if ($notes) $logMsg .= " — $notes";
+    $stmt = $pdo->prepare("INSERT INTO contract_logs (contract_id, action, details, created_by) VALUES (?, 'status_change', ?, ?)");
+    $stmt->execute([$id, $logMsg, $auth['user_id']]);
+
+    json_success(['id' => $id, 'status' => $status]);
+}
+
+else {
+    json_error('Unknown action', 404);
+}

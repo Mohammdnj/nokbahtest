@@ -3,14 +3,16 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { IconBrandWhatsapp, IconX } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useSiteContent } from "@/lib/useSiteContent";
 
 // Routes where the floating button should NOT appear (authenticated app area).
-const HIDDEN_PATH_PREFIXES = ["/dashboard", "/contracts", "/verify-otp"];
+const HIDDEN_PATH_PREFIXES = ["/dashboard", "/contracts", "/verify-otp", "/admin", "/employee"];
 
 export default function WhatsAppButton() {
   const pathname = usePathname() || "";
+  const content = useSiteContent();
   const [tooltip, setTooltip] = useState(true);
-  const phone = "966563214000";
+  const phone = content.contact?.whatsapp_phone ?? "966563214000";
   const message = encodeURIComponent("السلام عليكم، أبغى أوثّق عقد إيجار");
 
   useEffect(() => {

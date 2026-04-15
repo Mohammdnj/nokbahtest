@@ -5,13 +5,27 @@ import { IconCircleCheckFilled } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth-context";
+import { useSiteContent } from "@/lib/useSiteContent";
 
 export default function Pricing() {
   const router = useRouter();
   const { user } = useAuth();
+  const content = useSiteContent();
 
   const handleClick = () => {
     router.push(user ? "/dashboard/" : "/login/");
+  };
+
+  // Override default tier prices with live content
+  const livePrices = {
+    residential: {
+      price: `${content.pricing?.residential_price ?? "249"} ر.س`,
+      oldPrice: `${content.pricing?.residential_old_price ?? "549"} ر.س`,
+    },
+    commercial: {
+      price: `${content.pricing?.commercial_price ?? "349"} ر.س`,
+      oldPrice: `${content.pricing?.commercial_old_price ?? "749"} ر.س`,
+    },
   };
 
   return (
@@ -35,7 +49,14 @@ export default function Pricing() {
       </motion.div>
 
       <div className="relative z-20 mx-auto mt-10 grid w-full max-w-3xl grid-cols-1 gap-5 md:mt-20 md:grid-cols-2 md:gap-6">
-        {tiers.map((tier, idx) => (
+        {tiers.map((_tier, idx) => {
+          const liveTier = {
+            ..._tier,
+            price: idx === 0 ? livePrices.residential.price : livePrices.commercial.price,
+            oldPrice: idx === 0 ? livePrices.residential.oldPrice : livePrices.commercial.oldPrice,
+          };
+          const tier = liveTier;
+          return (
           <motion.div
             key={tier.id}
             initial={{ opacity: 0, y: 30 }}
@@ -129,7 +150,8 @@ export default function Pricing() {
               </button>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
