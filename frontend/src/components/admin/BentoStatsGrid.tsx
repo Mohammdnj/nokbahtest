@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useRef } from "react";
-import { motion } from "motion/react";
-import createGlobe from "cobe";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import {
   IconFileDescription,
   IconClock,
@@ -13,8 +13,15 @@ import {
   IconReceipt2,
   IconTrendingUp,
   IconActivity,
+  IconBolt,
+  IconArrowUpRight,
+  IconBuildingEstate,
+  IconMessage2,
+  IconPlus,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { AreaChart, SparkLine, DonutChart, HorizontalBars, type DonutSlice } from "./charts";
 
 interface Stats {
   total_contracts: number;
@@ -27,6 +34,53 @@ interface Stats {
   invoices_today: number;
 }
 
+interface DailySeries {
+  day: string;
+  contracts: number;
+  revenue: number;
+}
+
+interface StatusBreakdownRow {
+  status: string;
+  count: number;
+}
+
+interface CityRow {
+  city: string;
+  c: number;
+}
+
+interface FeedItemLite {
+  id: number;
+  title: string;
+  body: string;
+  created_at: string;
+}
+
+const statusColors: Record<string, string> = {
+  draft: "#9ca3af",
+  pending: "#f59e0b",
+  in_progress: "#3b82f6",
+  reviewing: "#8b5cf6",
+  completed: "#0b7a5a",
+  active: "#10b981",
+  rejected: "#ef4444",
+  cancelled: "#6b7280",
+  expired: "#94a3b8",
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "مسودة",
+  pending: "قيد الانتظار",
+  in_progress: "جاري التنفيذ",
+  reviewing: "مراجعة",
+  completed: "مكتمل",
+  active: "نشط",
+  rejected: "مرفوض",
+  cancelled: "ملغي",
+  expired: "منتهي",
+};
+
 export default function BentoStatsGrid({
   stats,
   loading,
@@ -34,85 +88,200 @@ export default function BentoStatsGrid({
 }: {
   stats: Stats | null;
   loading: boolean;
-  recentActivity?: Array<{ id: number; title: string; body: string; created_at: string }>;
+  recentActivity?: FeedItemLite[];
 }) {
-  return (
-    <div className="mt-6 grid grid-cols-1 gap-4 md:mt-8 md:auto-rows-[min-content] md:grid-cols-5">
-      {/* Total contracts — large hero card with animated globe-style background */}
-      <Card className="md:col-span-3 md:row-span-2">
-        <CardSkeletonBody className="h-56 md:h-72">
-          <GlobeWidget pendingCount={stats?.pending_contracts ?? 0} />
-        </CardSkeletonBody>
-        <CardContent>
-          <div className="flex items-end justify-between">
-            <div>
-              <CardTitle>إجمالي العقود</CardTitle>
-              <CardDescription>عدد العقود المسجلة في المنصة منذ الانطلاق</CardDescription>
-            </div>
-            <div className="text-left">
-              {loading ? (
-                <div className="h-12 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-              ) : (
-                <div className="text-4xl font-bold text-[#0b7a5a] dark:text-emerald-400">
-                  {(stats?.total_contracts ?? 0).toLocaleString()}
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+  const router = useRouter();
+  const [series, setSeries] = useState<DailySeries[]>([]);
+  const [breakdown, setBreakdown] = useState<StatusBreakdownRow[]>([]);
+  const [topCities, setTopCities] = useState<CityRow[]>([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
 
-      {/* Revenue */}
-      <Card className="md:col-span-2">
-        <CardSkeletonBody className="h-32">
-          <RevenueChart value={stats?.total_revenue ?? 0} />
-        </CardSkeletonBody>
-        <CardContent>
-          <div className="flex items-center justify-between">
+  useEffect(() => {
+    Promise.all([
+      api.get("admin?action=daily-stats&days=14").then((r) => r.data ?? r).catch(() => null),
+      api.get("admin?action=status-breakdown").then((r) => r.data ?? r).catch(() => []),
+      api.get("admin?action=top-cities").then((r) => r.data ?? r).catch(() => []),
+    ])
+      .then(([daily, status, cities]) => {
+        if (daily?.series) setSeries(daily.series);
+        if (status) setBreakdown(status);
+        if (cities) setTopCities(cities);
+      })
+      .finally(() => setChartsLoading(false));
+  }, []);
+
+  const revenueSeries = series.map((s) => Number(s.revenue) || 0);
+  const contractSeries = series.map((s) => Number(s.contracts) || 0);
+
+  // Compute day-over-day delta for revenue
+  const revenueTrend =
+    revenueSeries.length >= 2
+      ? ((revenueSeries[revenueSeries.length - 1] - revenueSeries[revenueSeries.length - 2]) /
+          (revenueSeries[revenueSeries.length - 2] || 1)) *
+        100
+      : 0;
+
+  const contractTrend =
+    contractSeries.length >= 2
+      ? contractSeries[contractSeries.length - 1] - contractSeries[contractSeries.length - 2]
+      : 0;
+
+  // Donut data
+  const donutSlices: DonutSlice[] = breakdown
+    .filter((b) => b.count > 0)
+    .map((b) => ({
+      label: statusLabels[b.status] ?? b.status,
+      value: b.count,
+      color: statusColors[b.status] ?? "#9ca3af",
+    }));
+
+  return (
+    <div className="mt-6 space-y-4 md:mt-8">
+      {/* ROW 1 — HERO REVENUE CHART (full width) */}
+      <BentoCard className="overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr]">
+          {/* Left: numbers */}
+          <div className="border-b border-neutral-100 p-6 md:border-b-0 md:border-l md:p-8 dark:border-neutral-800">
             <div className="flex items-center gap-2">
               <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
                 <IconWallet className="size-5" />
               </div>
-              <CardTitle className="text-sm">إجمالي الإيرادات</CardTitle>
+              <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                إجمالي الإيرادات
+              </span>
             </div>
+
             {loading ? (
-              <div className="h-6 w-16 animate-pulse rounded bg-neutral-200" />
+              <div className="mt-5 h-12 w-32 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
             ) : (
-              <div className="text-lg font-bold text-[#0b7a5a] dark:text-emerald-400">
-                {(stats?.total_revenue ?? 0).toLocaleString()} ر.س
+              <div className="mt-5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-neutral-900 md:text-5xl dark:text-white">
+                    {(stats?.total_revenue ?? 0).toLocaleString()}
+                  </span>
+                  <span className="text-sm font-semibold text-neutral-400">ر.س</span>
+                </div>
+                {revenueTrend !== 0 && (
+                  <div
+                    className={cn(
+                      "mt-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold",
+                      revenueTrend >= 0
+                        ? "bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400"
+                        : "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+                    )}
+                  >
+                    <IconTrendingUp className={cn("size-3", revenueTrend < 0 && "rotate-180")} />
+                    {revenueTrend > 0 ? "+" : ""}
+                    {revenueTrend.toFixed(1)}%
+                    <span className="font-normal opacity-70">عن أمس</span>
+                  </div>
+                )}
               </div>
             )}
+
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-5 dark:border-neutral-800">
+              <MiniStat
+                label="فواتير اليوم"
+                value={stats?.invoices_today ?? 0}
+                loading={loading}
+              />
+              <MiniStat
+                label="عقود اليوم"
+                value={contractSeries[contractSeries.length - 1] ?? 0}
+                loading={chartsLoading}
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Pending */}
-      <SmallStat
-        loading={loading}
-        icon={<IconClock className="size-5" />}
-        label="قيد المراجعة"
-        value={stats?.pending_contracts ?? 0}
-        color="amber"
-        className="md:col-span-1"
-      />
-      <SmallStat
-        loading={loading}
-        icon={<IconCircleCheck className="size-5" />}
-        label="مكتمل"
-        value={stats?.completed_contracts ?? 0}
-        color="emerald"
-        className="md:col-span-1"
-      />
+          {/* Right: area chart */}
+          <div className="relative p-4 md:p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                  الإيرادات (آخر 14 يوم)
+                </h3>
+                <p className="text-[10px] text-neutral-400">رسم بياني لحركة الإيرادات اليومية</p>
+              </div>
+              <span className="hidden items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-[#0b7a5a] sm:inline-flex dark:bg-emerald-950/40 dark:text-emerald-400">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                مباشر
+              </span>
+            </div>
+            <div className="h-44 w-full md:h-52">
+              {chartsLoading ? (
+                <div className="h-full w-full animate-pulse rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+              ) : (
+                <AreaChart data={revenueSeries} height={220} color="#0b7a5a" />
+              )}
+            </div>
+          </div>
+        </div>
+      </BentoCard>
 
-      {/* Live activity feed */}
-      <Card className="md:col-span-3">
-        <CardContent>
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+      {/* ROW 2 — Status donut + activity feed + quick actions */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Status distribution donut */}
+        <BentoCard className="p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400">
               <IconActivity className="size-5" />
             </div>
-            <CardTitle className="text-sm">النشاط الحي</CardTitle>
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                توزيع العقود
+              </h3>
+              <p className="text-[10px] text-neutral-400">حسب الحالة</p>
+            </div>
+          </div>
+
+          {chartsLoading ? (
+            <div className="mx-auto size-40 animate-pulse rounded-full bg-neutral-100 dark:bg-neutral-800" />
+          ) : donutSlices.length === 0 ? (
+            <div className="flex h-40 items-center justify-center">
+              <p className="text-xs text-neutral-400">لا توجد بيانات</p>
+            </div>
+          ) : (
+            <div className="relative flex justify-center">
+              <DonutChart slices={donutSlices} size={170} thickness={20} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {stats?.total_contracts ?? 0}
+                </div>
+                <div className="text-[10px] text-neutral-400">إجمالي</div>
+              </div>
+            </div>
+          )}
+
+          {donutSlices.length > 0 && (
+            <ul className="mt-4 space-y-1.5">
+              {donutSlices.slice(0, 4).map((s) => (
+                <li key={s.label} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full" style={{ background: s.color }} />
+                    <span className="text-neutral-600 dark:text-neutral-300">{s.label}</span>
+                  </div>
+                  <span className="font-bold text-neutral-800 dark:text-neutral-200">{s.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </BentoCard>
+
+        {/* Live activity feed */}
+        <BentoCard className="p-6 md:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                <IconBolt className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                  النشاط الحي
+                </h3>
+                <p className="text-[10px] text-neutral-400">آخر التحديثات</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
               <span className="relative flex size-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75"></span>
                 <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500"></span>
@@ -120,72 +289,162 @@ export default function BentoStatsGrid({
               مباشر
             </span>
           </div>
+
           {recentActivity && recentActivity.length > 0 ? (
-            <ul className="space-y-2">
-              {recentActivity.slice(0, 4).map((a) => (
-                <li key={a.id} className="flex items-start gap-2 rounded-xl bg-neutral-50 p-2.5 dark:bg-neutral-800/40">
-                  <div className="mt-1 size-2 flex-shrink-0 rounded-full bg-[#0b7a5a]" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold text-neutral-800 dark:text-neutral-200">{a.title}</p>
-                    <p className="truncate text-[10px] text-neutral-500 dark:text-neutral-400">{a.body}</p>
-                  </div>
-                </li>
-              ))}
+            <ul className="space-y-2.5">
+              <AnimatePresence>
+                {recentActivity.slice(0, 5).map((a, idx) => (
+                  <motion.li
+                    key={a.id + a.created_at}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="group flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3 transition-colors hover:border-emerald-200 hover:bg-emerald-50/50 dark:border-neutral-800 dark:bg-neutral-800/30 dark:hover:border-emerald-800/40"
+                  >
+                    <div className="mt-0.5 size-2 flex-shrink-0 rounded-full bg-[#0b7a5a]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                        {a.title}
+                      </p>
+                      <p className="truncate text-[10px] text-neutral-500 dark:text-neutral-400">
+                        {a.body}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 text-[10px] text-neutral-400" dir="ltr">
+                      {formatTime(a.created_at)}
+                    </span>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           ) : (
-            <p className="rounded-xl bg-neutral-50 p-4 text-center text-xs text-neutral-400 dark:bg-neutral-800/40">
-              في انتظار النشاط...
-            </p>
+            <div className="flex h-40 flex-col items-center justify-center rounded-2xl bg-neutral-50/50 dark:bg-neutral-800/30">
+              <IconActivity className="size-8 text-neutral-300" />
+              <p className="mt-2 text-xs text-neutral-400">في انتظار النشاط...</p>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </BentoCard>
+      </div>
 
-      {/* Bottom row */}
-      <SmallStat
-        loading={loading}
-        icon={<IconUsers className="size-5" />}
-        label="المستخدمين"
-        value={stats?.total_users ?? 0}
-        color="purple"
-        className="md:col-span-1"
-      />
-      <SmallStat
-        loading={loading}
-        icon={<IconUserCog className="size-5" />}
-        label="الموظفين"
-        value={stats?.total_employees ?? 0}
-        color="blue"
-        className="md:col-span-1"
-      />
-      <SmallStat
-        loading={loading}
-        icon={<IconDiscount2 className="size-5" />}
-        label="خصومات نشطة"
-        value={stats?.active_discounts ?? 0}
-        color="rose"
-        className="md:col-span-1"
-      />
-      <SmallStat
-        loading={loading}
-        icon={<IconReceipt2 className="size-5" />}
-        label="فواتير اليوم"
-        value={stats?.invoices_today ?? 0}
-        color="teal"
-        className="md:col-span-2"
-      />
+      {/* ROW 3 — Mini stats with sparklines */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <SparkStat
+          icon={<IconFileDescription className="size-5" />}
+          label="إجمالي العقود"
+          value={stats?.total_contracts ?? 0}
+          color="emerald"
+          sparkData={contractSeries}
+          loading={loading || chartsLoading}
+          trend={contractTrend}
+        />
+        <SparkStat
+          icon={<IconClock className="size-5" />}
+          label="قيد المراجعة"
+          value={stats?.pending_contracts ?? 0}
+          color="amber"
+          sparkData={contractSeries.map((v) => v * 0.4)}
+          loading={loading}
+        />
+        <SparkStat
+          icon={<IconCircleCheck className="size-5" />}
+          label="عقود مكتملة"
+          value={stats?.completed_contracts ?? 0}
+          color="emerald"
+          sparkData={contractSeries.map((v) => v * 0.7)}
+          loading={loading}
+        />
+        <SparkStat
+          icon={<IconUsers className="size-5" />}
+          label="المستخدمين"
+          value={stats?.total_users ?? 0}
+          color="blue"
+          sparkData={contractSeries.map((v, i) => v + i * 2)}
+          loading={loading}
+        />
+      </div>
+
+      {/* ROW 4 — Top cities + Quick actions */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Top cities */}
+        <BentoCard className="p-6 md:col-span-2">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+              <IconBuildingEstate className="size-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                أعلى المدن
+              </h3>
+              <p className="text-[10px] text-neutral-400">المناطق الأكثر طلباً للعقود</p>
+            </div>
+          </div>
+          {chartsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-8 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
+              ))}
+            </div>
+          ) : topCities.length === 0 ? (
+            <div className="flex h-32 items-center justify-center text-xs text-neutral-400">
+              لا توجد بيانات بعد
+            </div>
+          ) : (
+            <HorizontalBars
+              data={topCities.map((c) => ({ label: c.city, value: Number(c.c) }))}
+            />
+          )}
+        </BentoCard>
+
+        {/* Quick actions */}
+        <BentoCard className="p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400">
+              <IconBolt className="size-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                إجراءات سريعة
+              </h3>
+              <p className="text-[10px] text-neutral-400">اختصارات للمهام الشائعة</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <QuickAction
+              icon={<IconReceipt2 className="size-4" />}
+              label="إنشاء فاتورة"
+              onClick={() => router.push("/admin/invoices/new/")}
+            />
+            <QuickAction
+              icon={<IconMessage2 className="size-4" />}
+              label="إرسال رسالة SMS"
+              onClick={() => router.push("/admin/sms/")}
+            />
+            <QuickAction
+              icon={<IconDiscount2 className="size-4" />}
+              label="كود خصم جديد"
+              onClick={() => router.push("/admin/discounts/")}
+            />
+            <QuickAction
+              icon={<IconUserCog className="size-4" />}
+              label="إدارة الموظفين"
+              onClick={() => router.push("/admin/users/")}
+            />
+          </div>
+        </BentoCard>
+      </div>
     </div>
   );
 }
 
-// ---------- Card primitives ----------
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+// ---------- Reusable Bento card ----------
+function BentoCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <motion.div
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       className={cn(
-        "group isolate flex flex-col overflow-hidden rounded-3xl border border-neutral-200/60 bg-white shadow-[0_1px_1px_rgba(0,0,0,0.04),0_4px_6px_rgba(34,42,53,0.04),0_24px_68px_rgba(47,48,55,0.04)] dark:border-neutral-800/60 dark:bg-neutral-900",
+        "rounded-3xl border border-neutral-200/60 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(11,122,90,0.06)] dark:border-neutral-800/60 dark:bg-neutral-900",
         className
       )}
     >
@@ -194,157 +453,113 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   );
 }
 
-function CardSkeletonBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("relative h-full w-full overflow-hidden", className)}>{children}</div>;
-}
-
-function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("p-5 md:p-6", className)}>{children}</div>;
-}
-
-function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h3 className={cn("font-bold tracking-tight text-neutral-800 dark:text-neutral-100", className)}>
-      {children}
-    </h3>
-  );
-}
-
-function CardDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <p className={cn("mt-2 text-xs text-neutral-500 md:text-sm dark:text-neutral-400", className)}>
-      {children}
-    </p>
-  );
-}
-
-// ---------- Small stat tile ----------
-
-function SmallStat({
-  loading,
-  icon,
+// ---------- Mini stat ----------
+function MiniStat({
   label,
   value,
-  color,
-  className,
+  loading,
 }: {
-  loading: boolean;
-  icon: React.ReactNode;
   label: string;
   value: number | string;
-  color: "amber" | "emerald" | "purple" | "blue" | "rose" | "teal";
-  className?: string;
+  loading: boolean;
 }) {
-  const colorClasses = {
-    amber: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
-    emerald: "bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400",
-    purple: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
-    blue: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
-    rose: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
-    teal: "bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400",
-  }[color];
-
   return (
-    <Card className={className}>
-      <CardContent>
-        <div className={cn("mb-3 flex size-10 items-center justify-center rounded-xl", colorClasses)}>
-          {icon}
-        </div>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{label}</p>
-        {loading ? (
-          <div className="mt-1 h-7 w-12 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-        ) : (
-          <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------- Animated globe widget ----------
-
-function GlobeWidget({ pendingCount }: { pendingCount: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    let phi = 0;
-    // cobe's TS types miss onRender — cast to any to use the runtime API
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const globe = createGlobe(canvasRef.current, {
-      devicePixelRatio: 2,
-      width: 600 * 2,
-      height: 600 * 2,
-      phi: 0,
-      theta: 0.25,
-      dark: 0,
-      diffuse: 1.2,
-      mapSamples: 16000,
-      mapBrightness: 5,
-      baseColor: [0.95, 0.98, 0.96],
-      markerColor: [11 / 255, 122 / 255, 90 / 255],
-      glowColor: [0.85, 0.95, 0.9],
-      markers: [
-        { location: [24.7136, 46.6753], size: 0.08 },
-        { location: [21.3891, 39.8579], size: 0.06 },
-        { location: [21.4858, 39.1925], size: 0.05 },
-        { location: [26.4207, 50.0888], size: 0.04 },
-        { location: [24.4709, 39.6122], size: 0.04 },
-      ],
-      onRender: (state: { phi: number }) => {
-        state.phi = phi;
-        phi += 0.005;
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-    return () => globe.destroy();
-  }, []);
-
-  return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20" />
-      <canvas
-        ref={canvasRef}
-        style={{ width: 380, height: 380, maxWidth: "100%", aspectRatio: 1 }}
-        className="relative -mb-20 opacity-90 md:-mb-16"
-      />
-      {pendingCount > 0 && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#0b7a5a] shadow-lg dark:bg-neutral-800 dark:text-emerald-400"
-        >
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75"></span>
-            <span className="relative inline-flex size-2 rounded-full bg-amber-500"></span>
-          </span>
-          {pendingCount} عقد جديد
-        </motion.div>
+    <div>
+      <p className="text-[10px] text-neutral-400">{label}</p>
+      {loading ? (
+        <div className="mt-1 h-5 w-12 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+      ) : (
+        <p className="text-base font-bold text-neutral-800 dark:text-neutral-200">{value}</p>
       )}
     </div>
   );
 }
 
-// ---------- Small revenue chart sparkline ----------
+// ---------- Spark stat tile ----------
+function SparkStat({
+  icon,
+  label,
+  value,
+  color,
+  sparkData,
+  loading,
+  trend,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  color: "emerald" | "amber" | "blue" | "rose";
+  sparkData: number[];
+  loading: boolean;
+  trend?: number;
+}) {
+  const colorMap = {
+    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/40", text: "text-[#0b7a5a] dark:text-emerald-400", line: "#0b7a5a" },
+    amber: { bg: "bg-amber-50 dark:bg-amber-950/40", text: "text-amber-600 dark:text-amber-400", line: "#f59e0b" },
+    blue: { bg: "bg-blue-50 dark:bg-blue-950/40", text: "text-blue-600 dark:text-blue-400", line: "#3b82f6" },
+    rose: { bg: "bg-rose-50 dark:bg-rose-950/40", text: "text-rose-600 dark:text-rose-400", line: "#f43f5e" },
+  }[color];
 
-function RevenueChart({ value }: { value: number }) {
-  // Simple decorative sparkline
   return (
-    <div className="relative flex h-full w-full items-end justify-around p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/40 to-transparent dark:from-emerald-950/20" />
-      {[0.4, 0.6, 0.5, 0.75, 0.6, 0.85, 0.7, 0.95].map((h, i) => (
-        <motion.div
-          key={i}
-          initial={{ height: 0 }}
-          animate={{ height: `${h * 100}%` }}
-          transition={{ delay: i * 0.05, type: "spring", stiffness: 100 }}
-          className="relative w-2 rounded-full bg-gradient-to-t from-[#0b7a5a] to-emerald-400 md:w-3"
-        />
-      ))}
-      <div className="absolute bottom-2 left-3 flex items-center gap-1 text-[10px] font-bold text-[#0b7a5a]">
-        <IconTrendingUp className="size-3" />
-        +12%
+    <BentoCard className="p-5">
+      <div className="flex items-start justify-between">
+        <div className={cn("flex size-10 items-center justify-center rounded-xl", colorMap.bg, colorMap.text)}>
+          {icon}
+        </div>
+        {sparkData && sparkData.length > 1 && (
+          <SparkLine data={sparkData} color={colorMap.line} />
+        )}
       </div>
-    </div>
+      <p className="mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">{label}</p>
+      {loading ? (
+        <div className="mt-1 h-7 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+      ) : (
+        <div className="mt-1 flex items-baseline gap-2">
+          <p className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
+          {trend !== undefined && trend !== 0 && (
+            <span className={cn("text-[10px] font-bold", trend > 0 ? "text-[#0b7a5a]" : "text-red-500")}>
+              {trend > 0 ? "+" : ""}
+              {trend}
+            </span>
+          )}
+        </div>
+      )}
+    </BentoCard>
   );
+}
+
+// ---------- Quick action button ----------
+function QuickAction({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3 text-right transition-all hover:border-emerald-200 hover:bg-emerald-50/50 dark:border-neutral-800 dark:bg-neutral-800/30 dark:hover:border-emerald-800/40"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex size-8 items-center justify-center rounded-xl bg-white text-[#0b7a5a] shadow-sm dark:bg-neutral-900 dark:text-emerald-400">
+          {icon}
+        </div>
+        <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">{label}</span>
+      </div>
+      <IconArrowUpRight className="size-4 text-neutral-300 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#0b7a5a]" />
+    </button>
+  );
+}
+
+// ---------- Helpers ----------
+function formatTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  } catch {
+    return "";
+  }
 }

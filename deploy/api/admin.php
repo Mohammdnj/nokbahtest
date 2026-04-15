@@ -46,6 +46,77 @@ if ($method === 'GET' && $action === 'stats') {
     json_success($stats);
 }
 
+// ============ DAILY TIMESERIES ============
+elseif ($method === 'GET' && $action === 'daily-stats') {
+    global $pdo;
+
+    $days = min(60, max(7, (int)($_GET['days'] ?? 14)));
+
+    $stmt = $pdo->prepare("
+        SELECT DATE(created_at) AS day, COUNT(*) AS c
+        FROM commercial_contracts
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ");
+    $stmt->execute([$days]);
+    $contractsByDay = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("
+        SELECT DATE(created_at) AS day, COALESCE(SUM(total_amount), 0) AS revenue
+        FROM invoices
+        WHERE status IN ('issued','paid')
+          AND created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ");
+    $stmt->execute([$days]);
+    $revenueByDay = $stmt->fetchAll();
+
+    $series = [];
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $day = date('Y-m-d', strtotime("-$i day"));
+        $series[$day] = ['day' => $day, 'contracts' => 0, 'revenue' => 0];
+    }
+    foreach ($contractsByDay as $row) {
+        if (isset($series[$row['day']])) $series[$row['day']]['contracts'] = (int)$row['c'];
+    }
+    foreach ($revenueByDay as $row) {
+        if (isset($series[$row['day']])) $series[$row['day']]['revenue'] = (float)$row['revenue'];
+    }
+
+    json_success([
+        'days' => $days,
+        'series' => array_values($series),
+    ]);
+}
+
+// ============ STATUS DISTRIBUTION ============
+elseif ($method === 'GET' && $action === 'status-breakdown') {
+    global $pdo;
+    $stmt = $pdo->query("SELECT status, COUNT(*) AS c FROM commercial_contracts GROUP BY status");
+    $rows = $stmt->fetchAll();
+    $out = [];
+    foreach ($rows as $r) {
+        $out[] = ['status' => $r['status'], 'count' => (int)$r['c']];
+    }
+    json_success($out);
+}
+
+// ============ TOP CITIES ============
+elseif ($method === 'GET' && $action === 'top-cities') {
+    global $pdo;
+    $stmt = $pdo->query("
+        SELECT city, COUNT(*) AS c
+        FROM commercial_contracts
+        WHERE city IS NOT NULL AND city != ''
+        GROUP BY city
+        ORDER BY c DESC
+        LIMIT 6
+    ");
+    json_success($stmt->fetchAll());
+}
+
 // ============ CONTRACTS (all) ============
 elseif ($method === 'GET' && $action === 'contracts') {
     global $pdo;
