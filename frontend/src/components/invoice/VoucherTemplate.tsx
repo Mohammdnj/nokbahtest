@@ -278,7 +278,7 @@ const VoucherTemplate = React.forwardRef<HTMLDivElement, { data: VoucherData }>(
               style={{ maxWidth: "140px", maxHeight: "140px", opacity: 0.92 }}
             />
           </div>
-          <SignatureBox label={data.issuedByName ? `التوقيع: ${data.issuedByName}` : "توقيع المحرر"} />
+          <SignatureBox label="توقيع المحرر" />
         </div>
 
         {/* Footer */}
