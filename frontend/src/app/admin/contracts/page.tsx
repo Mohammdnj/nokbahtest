@@ -50,7 +50,7 @@ const filters = [
 ];
 
 export default function AdminContractsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const isAdmin = user?.role === "admin";
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,15 +59,38 @@ export default function AdminContractsPage() {
   const [selected, setSelected] = useState<Contract | null>(null);
 
   useEffect(() => {
+    // Wait for auth context to resolve so we know which endpoint to call.
+    // Otherwise the page fires twice (once for null user, once for real user)
+    // and the second response can clear the list if it errors.
+    if (authLoading || !user) return;
+
+    let cancelled = false;
     setLoading(true);
     const endpoint = isAdmin
       ? `admin?action=contracts${status ? `&status=${status}` : ""}`
       : `employee?action=queue${status ? `&status=${status}` : ""}`;
+
     api.get(endpoint)
-      .then((r) => setContracts(r.data ?? r ?? []))
-      .catch(() => setContracts([]))
-      .finally(() => setLoading(false));
-  }, [status, isAdmin]);
+      .then((r) => {
+        if (cancelled) return;
+        const data = r.data ?? r;
+        // Only overwrite if we got an actual array — never blank out on
+        // an unexpected shape.
+        if (Array.isArray(data)) setContracts(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // Don't clear an existing list on transient errors — just log.
+        console.error("Failed to load contracts:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, isAdmin, authLoading, user]);
 
   const filtered = useMemo(() => {
     if (!search) return contracts;
