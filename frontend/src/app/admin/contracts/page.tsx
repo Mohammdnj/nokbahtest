@@ -58,13 +58,16 @@ export default function AdminContractsPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Contract | null>(null);
 
-  useEffect(() => {
-    // Wait for auth context to resolve so we know which endpoint to call.
-    // Otherwise the page fires twice (once for null user, once for real user)
-    // and the second response can clear the list if it errors.
-    if (authLoading || !user) return;
+  // Use a stable user id instead of the user object so that re-renders from
+  // unrelated context consumers (NotificationsBell polling, etc) don't cause
+  // this effect to re-run and abort an in-flight request.
+  const userId = user?.id;
+  const userRole = user?.role;
 
-    let cancelled = false;
+  useEffect(() => {
+    if (authLoading || !userId) return;
+
+    let active = true;
     setLoading(true);
     const endpoint = isAdmin
       ? `admin?action=contracts${status ? `&status=${status}` : ""}`
@@ -72,25 +75,27 @@ export default function AdminContractsPage() {
 
     api.get(endpoint)
       .then((r) => {
-        if (cancelled) return;
-        const data = r.data ?? r;
-        // Only overwrite if we got an actual array — never blank out on
-        // an unexpected shape.
-        if (Array.isArray(data)) setContracts(data);
+        if (!active) return;
+        const data = r?.data ?? r;
+        if (Array.isArray(data)) {
+          setContracts(data);
+        } else {
+          console.warn("Contracts response not an array:", data);
+        }
       })
       .catch((err) => {
-        if (cancelled) return;
-        // Don't clear an existing list on transient errors — just log.
+        if (!active) return;
         console.error("Failed to load contracts:", err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (active) setLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [status, isAdmin, authLoading, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, userId, userRole, authLoading]);
 
   const filtered = useMemo(() => {
     if (!search) return contracts;
