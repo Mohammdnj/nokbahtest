@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useRef, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import {
   IconPlus,
@@ -38,7 +38,24 @@ const paymentMethods = [
 ];
 
 export default function NewInvoicePage() {
+  return (
+    <Suspense
+      fallback={
+        <AdminShell title="إنشاء فاتورة">
+          <div className="flex justify-center p-12">
+            <IconLoader2 className="size-8 animate-spin text-[#0b7a5a]" />
+          </div>
+        </AdminShell>
+      }
+    >
+      <NewInvoiceInner />
+    </Suspense>
+  );
+}
+
+function NewInvoiceInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const { user } = useAuth();
 
   const [docType, setDocType] = useState<VoucherData["docType"]>("receipt_voucher");
@@ -53,6 +70,21 @@ export default function NewInvoicePage() {
   const [vatRate, setVatRate] = useState(15);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [lineItems, setLineItems] = useState<LineItem[]>([{ description: "", qty: 1, price: 0 }]);
+
+  // Pre-fill from query params (e.g. when arriving from a contract)
+  useEffect(() => {
+    const recName = params.get("recipient_name");
+    const recPhone = params.get("recipient_phone");
+    const amount = params.get("amount");
+    const desc = params.get("description");
+    if (recName) setRecipientName(recName);
+    if (recPhone) setRecipientPhone(recPhone);
+    if (desc) setDescription(desc);
+    if (amount) {
+      setLineItems([{ description: desc || "رسوم توثيق عقد", qty: 1, price: parseFloat(amount) || 0 }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [savedNumber, setSavedNumber] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

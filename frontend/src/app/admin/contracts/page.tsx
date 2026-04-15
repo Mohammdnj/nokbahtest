@@ -1,12 +1,27 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { IconSearch, IconFileDescription, IconCalendar } from "@tabler/icons-react";
+import {
+  IconSearch,
+  IconFileDescription,
+  IconCalendar,
+  IconX,
+  IconLoader2,
+  IconUser,
+  IconUsers,
+  IconMapPin,
+  IconRuler,
+  IconCoin,
+  IconFileText,
+  IconBrandWhatsapp,
+  IconReceipt2,
+} from "@tabler/icons-react";
 import AdminShell from "@/components/admin/AdminShell";
 import StatusBadge, { statusMeta } from "@/components/dashboard/StatusBadge";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface Contract {
   id: number;
@@ -205,6 +220,132 @@ function ContractRow({
   );
 }
 
+interface FullContract {
+  id: number;
+  contract_number: string;
+  status: string;
+  current_step: number;
+  ejar_number: string | null;
+  created_at: string;
+  client_name: string | null;
+  client_phone: string | null;
+  client_email: string | null;
+
+  // Step 1
+  owner_or_tenant: string | null;
+  owner_alive: string | null;
+  deed_type: string | null;
+  property_type: string | null;
+  property_usage: string | null;
+  deed_number: string | null;
+  deed_date: string | null;
+
+  // Step 2
+  region: string | null;
+  city: string | null;
+  district: string | null;
+  street_name: string | null;
+  building_number: string | null;
+  postal_code: string | null;
+  additional_number: string | null;
+
+  // Step 3
+  owner_name: string | null;
+  owner_id_number: string | null;
+  owner_dob: string | null;
+  owner_phone: string | null;
+  has_agent: number | null;
+  agent_name: string | null;
+  agent_id_number: string | null;
+  agent_dob: string | null;
+  agent_phone: string | null;
+
+  // Step 4
+  tenant_type: string | null;
+  tenant_id_number: string | null;
+  tenant_dob: string | null;
+  tenant_phone: string | null;
+  commercial_register: string | null;
+  vat_number: string | null;
+  company_name: string | null;
+
+  // Step 5
+  unit_type: string | null;
+  unit_usage: string | null;
+  unit_number: string | null;
+  floor_number: string | null;
+  unit_area: string | null;
+  window_ac_count: number | null;
+  split_ac_count: number | null;
+  electricity_meter: string | null;
+  water_meter: string | null;
+
+  // Step 6
+  contract_start_date: string | null;
+  contract_duration_years: number | null;
+  total_fees: string | null;
+  annual_rent_amount: string | null;
+  payment_method: string | null;
+  additional_conditions: string | null;
+}
+
+const labelMaps = {
+  owner_or_tenant: { owner: "المالك", tenant: "المستأجر" },
+  owner_alive: { alive: "حي", deceased: "متوفى" },
+  deed_type: {
+    electronic: "صك إلكتروني",
+    real_estate_registry: "صك السجل العقاري",
+    paper: "صك ورقي",
+  },
+  property_type: {
+    building: "عمارة",
+    villa: "فيلا",
+    plaza_open: "مجمع تجاري مفتوح",
+    plaza_closed: "مجمع تجاري مغلق",
+    land: "أرض",
+    tower: "برج",
+    factory: "مصنع",
+    rest_house: "استراحة",
+    farm: "مزرعة",
+  },
+  property_usage: {
+    commercial: "تجاري",
+    residential_commercial: "سكني - تجاري",
+  },
+  tenant_type: { individual: "فرد", establishment: "مؤسسة", company: "شركة" },
+  unit_usage: { family: "سكن عائلات", individual: "سكن أفراد", collective: "سكن جماعي" },
+  unit_type: {
+    apartment: "شقة",
+    villa: "فيلا",
+    building: "عمارة",
+    floor: "دور",
+    studio: "استديو",
+    duplex: "دوبلكس",
+    office: "مكتب",
+    warehouse: "مستودع",
+    rest_house: "استراحة",
+    farm: "مزرعة",
+    land: "أرض",
+    driver_room: "غرفة سائق",
+    traditional: "بيت شعبي",
+  },
+  payment_method: {
+    monthly: "شهري",
+    quarterly: "ربع سنوي",
+    semi_annual: "نصف سنوي",
+    annual: "سنوي",
+  },
+} as const;
+
+function lookup<T extends keyof typeof labelMaps>(
+  field: T,
+  value: string | null | undefined
+): string {
+  if (!value) return "—";
+  const map = labelMaps[field] as Record<string, string>;
+  return map[value] ?? value;
+}
+
 function ContractDetailModal({
   contract,
   onClose,
@@ -214,51 +355,201 @@ function ContractDetailModal({
   onClose: () => void;
   onUpdate: (id: number, status: string, ejar?: string) => void;
 }) {
+  const router = useRouter();
+  const [full, setFull] = useState<FullContract | null>(null);
+  const [loading, setLoading] = useState(true);
   const [ejarNumber, setEjarNumber] = useState(contract.ejar_number ?? "");
+
+  useEffect(() => {
+    api.get(`employee?action=contract&id=${contract.id}`)
+      .then((r) => {
+        const body = r.data ?? r;
+        setFull(body);
+        setEjarNumber(body.ejar_number ?? "");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [contract.id]);
+
+  const c = full;
+  const date = c?.created_at
+    ? new Date(c.created_at).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })
+    : "—";
+
+  const handleCreateInvoice = () => {
+    if (!c) return;
+    // Pre-fill query params for the invoice builder
+    const params = new URLSearchParams({
+      contract_id: String(c.id),
+      recipient_name: c.client_name || "",
+      recipient_phone: c.client_phone || "",
+      amount: c.total_fees ?? "",
+      description: `رسوم توثيق عقد إيجار ${lookup("property_type", c.property_type)} — ${c.contract_number}`,
+    });
+    router.push(`/admin/invoices/new/?${params.toString()}`);
+  };
 
   return (
     <>
       <div onClick={onClose} className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" />
       <div className="fixed inset-x-0 bottom-0 top-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" dir="rtl">
-        <div className="relative flex h-[90vh] w-full max-w-lg flex-col rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl dark:bg-neutral-900">
-          <div className="sticky top-0 rounded-t-[28px] border-b border-neutral-100 bg-white/95 px-5 pb-4 pt-5 backdrop-blur sm:rounded-t-3xl sm:px-8 dark:border-neutral-800 dark:bg-neutral-900/95">
+        <div className="relative flex h-[94vh] w-full max-w-3xl flex-col rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl dark:bg-neutral-900">
+          {/* Header */}
+          <div className="sticky top-0 z-10 rounded-t-[28px] border-b border-neutral-100 bg-white/95 px-5 pb-4 pt-3 backdrop-blur-xl sm:rounded-t-3xl sm:px-8 sm:pt-5 dark:border-neutral-800 dark:bg-neutral-900/95">
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-neutral-200 sm:hidden dark:bg-neutral-700" />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-bold md:text-xl">إدارة العقد</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold md:text-xl">تفاصيل العقد</h2>
+                  <StatusBadge status={contract.status} />
+                </div>
                 <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400" dir="ltr">
                   {contract.contract_number}
                 </p>
+                <p className="mt-0.5 text-[10px] text-neutral-400">{date}</p>
               </div>
               <button
                 onClick={onClose}
                 className="flex size-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
               >
-                ✕
+                <IconX className="size-5" />
               </button>
             </div>
           </div>
 
+          {/* Body */}
           <div className="flex-1 overflow-y-auto px-5 pb-4 pt-4 sm:px-8">
-            <dl className="space-y-3 text-sm">
-              <Pair label="العميل" value={contract.client_name || "—"} />
-              <Pair label="الجوال" value={contract.client_phone || "—"} ltr />
-              <Pair label="المدينة" value={contract.city || "—"} />
-              <Pair label="الحي" value={contract.district || "—"} />
-              <Pair label="نوع العقار" value={contract.property_type || "—"} />
-              <Pair
-                label="الإيجار السنوي"
-                value={contract.annual_rent_amount ? `${contract.annual_rent_amount} ر.س` : "—"}
-              />
-              <Pair
-                label="الرسوم"
-                value={contract.total_fees ? `${contract.total_fees} ر.س` : "—"}
-              />
-              <Pair label="الحالة الحالية" value={statusMeta[contract.status]?.label ?? contract.status} />
-            </dl>
+            {loading || !c ? (
+              <div className="flex items-center justify-center py-16">
+                <IconLoader2 className="size-8 animate-spin text-[#0b7a5a]" />
+              </div>
+            ) : (
+              <>
+                {/* Client header card */}
+                <div className="mb-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-white p-4 dark:from-emerald-950/30 dark:to-neutral-800/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-[#0b7a5a] text-white">
+                      <IconUser className="size-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-neutral-500">العميل</div>
+                      <div className="truncate text-base font-bold text-neutral-900 dark:text-white">
+                        {c.client_name || "—"}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-neutral-500" dir="ltr">
+                        <span>{c.client_phone || "—"}</span>
+                        {c.client_email && <span>• {c.client_email}</span>}
+                      </div>
+                    </div>
+                    {c.client_phone && (
+                      <a
+                        href={`https://wa.me/${c.client_phone.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex size-10 items-center justify-center rounded-xl bg-[#25D366] text-white"
+                        title="واتساب"
+                      >
+                        <IconBrandWhatsapp className="size-5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
 
-            <div className="mt-6">
-              <label className="mb-2 block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                {/* Sections */}
+                <Section icon={<IconFileText className="size-4" />} title="بيانات الصك">
+                  <Pair label="نوع الطرف" value={lookup("owner_or_tenant", c.owner_or_tenant)} />
+                  <Pair label="حالة المالك" value={lookup("owner_alive", c.owner_alive)} />
+                  <Pair label="نوع الصك" value={lookup("deed_type", c.deed_type)} />
+                  <Pair label="نوع العقار" value={lookup("property_type", c.property_type)} />
+                  <Pair label="استخدام العقار" value={lookup("property_usage", c.property_usage)} />
+                  <Pair label="رقم الصك" value={c.deed_number || "—"} ltr />
+                  <Pair label="تاريخ الصك" value={c.deed_date || "—"} ltr />
+                </Section>
+
+                <Section icon={<IconMapPin className="size-4" />} title="العنوان الوطني">
+                  <Pair label="المنطقة" value={c.region || "—"} />
+                  <Pair label="المدينة" value={c.city || "—"} />
+                  <Pair label="الحي" value={c.district || "—"} />
+                  <Pair label="الشارع" value={c.street_name || "—"} />
+                  <Pair label="رقم المبنى" value={c.building_number || "—"} ltr />
+                  <Pair label="الرمز البريدي" value={c.postal_code || "—"} ltr />
+                  <Pair label="الرقم الإضافي" value={c.additional_number || "—"} ltr />
+                </Section>
+
+                <Section icon={<IconUser className="size-4" />} title="بيانات المالك">
+                  <Pair label="الاسم" value={c.owner_name || "—"} />
+                  <Pair label="رقم الهوية" value={c.owner_id_number || "—"} ltr />
+                  <Pair label="تاريخ الميلاد" value={c.owner_dob || "—"} ltr />
+                  <Pair label="الجوال" value={c.owner_phone || "—"} ltr />
+                  {c.has_agent ? (
+                    <>
+                      <SectionDivider label="الوكيل" />
+                      <Pair label="اسم الوكيل" value={c.agent_name || "—"} />
+                      <Pair label="هوية الوكيل" value={c.agent_id_number || "—"} ltr />
+                      <Pair label="تاريخ ميلاد الوكيل" value={c.agent_dob || "—"} ltr />
+                      <Pair label="جوال الوكيل" value={c.agent_phone || "—"} ltr />
+                    </>
+                  ) : null}
+                </Section>
+
+                <Section icon={<IconUsers className="size-4" />} title="بيانات المستأجر">
+                  <Pair label="نوع المستأجر" value={lookup("tenant_type", c.tenant_type)} />
+                  <Pair label="الجوال" value={c.tenant_phone || "—"} ltr />
+                  {c.tenant_type === "individual" ? (
+                    <>
+                      <Pair label="رقم الهوية" value={c.tenant_id_number || "—"} ltr />
+                      <Pair label="تاريخ الميلاد" value={c.tenant_dob || "—"} ltr />
+                    </>
+                  ) : (
+                    <>
+                      <Pair label="اسم المنشأة" value={c.company_name || "—"} />
+                      <Pair label="السجل التجاري" value={c.commercial_register || "—"} ltr />
+                      {c.vat_number && <Pair label="الرقم الضريبي" value={c.vat_number} ltr />}
+                    </>
+                  )}
+                </Section>
+
+                <Section icon={<IconRuler className="size-4" />} title="بيانات الوحدة">
+                  <Pair label="نوع الوحدة" value={lookup("unit_type", c.unit_type)} />
+                  <Pair label="استخدام الوحدة" value={lookup("unit_usage", c.unit_usage)} />
+                  <Pair label="رقم الوحدة" value={c.unit_number || "—"} ltr />
+                  <Pair label="الدور" value={c.floor_number === "ground" ? "الأرضي" : c.floor_number || "—"} />
+                  <Pair label="المساحة" value={c.unit_area ? `${c.unit_area} م²` : "—"} />
+                  <Pair label="مكيفات الشباك" value={String(c.window_ac_count ?? 0)} />
+                  <Pair label="مكيفات السبليت" value={String(c.split_ac_count ?? 0)} />
+                  {c.electricity_meter && <Pair label="عداد الكهرباء" value={c.electricity_meter} ltr />}
+                  {c.water_meter && <Pair label="عداد الماء" value={c.water_meter} ltr />}
+                </Section>
+
+                <Section icon={<IconCoin className="size-4" />} title="البيانات المالية">
+                  <Pair label="بداية العقد" value={c.contract_start_date || "—"} ltr />
+                  <Pair label="مدة العقد" value={c.contract_duration_years ? `${c.contract_duration_years} سنة` : "—"} />
+                  <Pair
+                    label="الإيجار السنوي"
+                    value={c.annual_rent_amount ? `${Number(c.annual_rent_amount).toLocaleString()} ر.س` : "—"}
+                    highlight
+                  />
+                  <Pair label="طريقة السداد" value={lookup("payment_method", c.payment_method)} />
+                  <Pair
+                    label="إجمالي الرسوم"
+                    value={c.total_fees ? `${Number(c.total_fees).toLocaleString()} ر.س` : "—"}
+                    highlight
+                  />
+                  {c.additional_conditions && (
+                    <div className="rounded-xl bg-amber-50 px-3 py-2.5 dark:bg-amber-950/30">
+                      <div className="text-xs font-bold text-amber-700 dark:text-amber-400">شروط إضافية</div>
+                      <div className="mt-1 text-xs text-amber-900 dark:text-amber-300">{c.additional_conditions}</div>
+                    </div>
+                  )}
+                </Section>
+              </>
+            )}
+          </div>
+
+          {/* Sticky action bar */}
+          <div className="sticky bottom-0 z-10 border-t border-neutral-100 bg-white/95 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl sm:px-8 dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="mb-3">
+              <label className="mb-1.5 block text-xs font-bold text-neutral-700 dark:text-neutral-300">
                 رقم إيجار (اختياري)
               </label>
               <input
@@ -266,26 +557,47 @@ function ContractDetailModal({
                 value={ejarNumber}
                 onChange={(e) => setEjarNumber(e.target.value)}
                 placeholder="أدخل رقم العقد في شبكة إيجار"
-                className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0b7a5a] dark:border-neutral-800 dark:bg-neutral-800 dark:text-white"
+                className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#0b7a5a] dark:border-neutral-800 dark:bg-neutral-800 dark:text-white"
               />
             </div>
 
-            <div className="mt-6">
-              <p className="mb-2 text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                تحديث الحالة
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {["in_progress", "reviewing", "completed", "rejected"].map((s) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { value: "in_progress", label: "جاري التنفيذ", color: "blue" },
+                { value: "reviewing", label: "مراجعة", color: "amber" },
+                { value: "completed", label: "مكتمل", color: "emerald" },
+                { value: "rejected", label: "مرفوض", color: "red" },
+              ].map((s) => {
+                const colorClasses = {
+                  blue: "border-blue-300 hover:bg-blue-50 hover:border-blue-500 text-blue-700 dark:text-blue-400 dark:border-blue-900/40",
+                  amber: "border-amber-300 hover:bg-amber-50 hover:border-amber-500 text-amber-700 dark:text-amber-400 dark:border-amber-900/40",
+                  emerald: "border-emerald-300 hover:bg-emerald-50 hover:border-[#0b7a5a] text-[#0b7a5a] dark:text-emerald-400 dark:border-emerald-900/40",
+                  red: "border-red-300 hover:bg-red-50 hover:border-red-500 text-red-700 dark:text-red-400 dark:border-red-900/40",
+                }[s.color as "blue" | "amber" | "emerald" | "red"];
+                return (
                   <button
-                    key={s}
-                    onClick={() => onUpdate(contract.id, s, ejarNumber || undefined)}
-                    className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-xs font-semibold text-neutral-700 transition-all hover:border-[#0b7a5a] hover:bg-emerald-50 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
+                    key={s.value}
+                    onClick={() => onUpdate(contract.id, s.value, ejarNumber || undefined)}
+                    className={cn(
+                      "rounded-xl border-2 bg-white px-3 py-2.5 text-xs font-bold transition-all dark:bg-neutral-800",
+                      colorClasses
+                    )}
                   >
-                    {statusMeta[s]?.label ?? s}
+                    {s.label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+
+            {full && (
+              <button
+                onClick={handleCreateInvoice}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0b7a5a] py-3 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20 hover:bg-[#0a6b4f]"
+              >
+                <IconReceipt2 className="size-4" />
+                إنشاء فاتورة لهذا العقد
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -293,12 +605,64 @@ function ContractDetailModal({
   );
 }
 
-function Pair({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/50">
-      <span className="text-xs text-neutral-500 dark:text-neutral-400">{label}</span>
+    <div className="mb-5">
+      <div className="mb-2 flex items-center gap-2">
+        <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400">
+          {icon}
+        </div>
+        <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{title}</h3>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="col-span-full mt-2 flex items-center gap-2 text-[10px] font-bold uppercase text-neutral-400">
+      <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+      {label}
+      <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+    </div>
+  );
+}
+
+function Pair({
+  label,
+  value,
+  ltr,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  ltr?: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-xl px-3 py-2",
+        highlight
+          ? "bg-emerald-50 dark:bg-emerald-950/30"
+          : "bg-neutral-50 dark:bg-neutral-800/50"
+      )}
+    >
+      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">{label}</span>
       <span
-        className="truncate text-sm font-semibold text-neutral-800 dark:text-neutral-200"
+        className={cn(
+          "truncate text-xs font-bold",
+          highlight ? "text-[#0b7a5a] dark:text-emerald-400" : "text-neutral-800 dark:text-neutral-200"
+        )}
         dir={ltr ? "ltr" : undefined}
       >
         {value}
