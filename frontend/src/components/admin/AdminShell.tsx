@@ -9,11 +9,12 @@ import {
   IconEdit,
   IconReceipt2,
   IconListCheck,
-  IconBell,
   IconLogout2,
   IconSun,
   IconMoon,
+  IconMessage2,
 } from "@tabler/icons-react";
+import NotificationsBell from "./NotificationsBell";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -28,10 +29,11 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "نظرة عامة", href: "/admin/", icon: IconGauge },
   { label: "العقود", href: "/admin/contracts/", icon: IconFileDescription },
+  { label: "الفواتير", href: "/admin/invoices/", icon: IconReceipt2 },
+  { label: "الرسائل", href: "/admin/sms/", icon: IconMessage2, adminOnly: true },
   { label: "الموظفين", href: "/admin/users/", icon: IconUsers, adminOnly: true },
   { label: "الخصومات", href: "/admin/discounts/", icon: IconDiscount2, adminOnly: true },
   { label: "المحتوى", href: "/admin/content/", icon: IconEdit, adminOnly: true },
-  { label: "الفواتير", href: "/admin/invoices/", icon: IconReceipt2 },
   { label: "قائمة الطلبات", href: "/employee/", icon: IconListCheck, adminOnly: false },
 ];
 
@@ -186,9 +188,7 @@ export default function AdminShell({
               >
                 {dark ? <IconSun className="size-5" /> : <IconMoon className="size-5" />}
               </button>
-              <button className="relative rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
-                <IconBell className="size-5" />
-              </button>
+              <NotificationsBell />
             </div>
           </div>
         </header>

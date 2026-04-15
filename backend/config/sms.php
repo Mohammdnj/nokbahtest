@@ -87,3 +87,27 @@ function normalizePhone($phone) {
     }
     return $phone;
 }
+
+/**
+ * Notify a customer about a contract status change.
+ * Returns the SMS API result (or null if no phone).
+ */
+function notifyContractStatus(string $phone, string $contractNumber, string $status): ?array {
+    if (!$phone) return null;
+
+    $templates = [
+        'pending'     => "تم استلام عقد الإيجار رقم %s. سيقوم فريقنا بمراجعته خلال 30 دقيقة. النخبة",
+        'in_progress' => "جاري معالجة عقدك رقم %s الآن. النخبة",
+        'reviewing'   => "عقدك رقم %s قيد المراجعة النهائية. النخبة",
+        'completed'   => "تم توثيق عقدك رقم %s بنجاح في شبكة إيجار. شكراً لاختيارك النخبة",
+        'active'      => "عقد إيجارك رقم %s نشط الآن. النخبة",
+        'rejected'    => "نأسف، تم رفض عقدك رقم %s. تواصل معنا على 0563214000 لمعرفة التفاصيل. النخبة",
+        'cancelled'   => "تم إلغاء عقدك رقم %s. النخبة",
+    ];
+
+    $template = $templates[$status] ?? null;
+    if (!$template) return null;
+
+    $message = sprintf($template, $contractNumber);
+    return sendSMS($phone, $message);
+}

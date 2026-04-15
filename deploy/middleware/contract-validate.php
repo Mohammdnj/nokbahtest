@@ -136,6 +136,30 @@ function validate_step6(array $data): ?string {
     return null;
 }
 
+/**
+ * Status state machine: returns the list of allowed next statuses
+ * given the current one. Used by both API and admin UI.
+ */
+function allowed_status_transitions(string $current): array {
+    return match ($current) {
+        'draft'       => ['pending', 'cancelled'],
+        'pending'     => ['in_progress', 'rejected', 'cancelled'],
+        'in_progress' => ['reviewing', 'completed', 'rejected'],
+        'reviewing'   => ['completed', 'in_progress', 'rejected'],
+        'completed'   => ['active'],
+        'active'      => ['expired', 'cancelled'],
+        'rejected'    => ['in_progress'],
+        'cancelled'   => [],
+        'expired'     => [],
+        default       => [],
+    };
+}
+
+function can_transition_status(string $from, string $to): bool {
+    if ($from === $to) return true;
+    return in_array($to, allowed_status_transitions($from), true);
+}
+
 function get_duration_pricing(): array {
     return [
         1 => 349,

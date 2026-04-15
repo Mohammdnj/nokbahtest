@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion } from "motion/react";
 import {
   IconSearch,
@@ -548,45 +548,21 @@ function ContractDetailModal({
 
           {/* Sticky action bar */}
           <div className="sticky bottom-0 z-10 border-t border-neutral-100 bg-white/95 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl sm:px-8 dark:border-neutral-800 dark:bg-neutral-900/95">
-            <div className="mb-3">
-              <label className="mb-1.5 block text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                رقم إيجار (اختياري)
-              </label>
+            {/* Status stepper */}
+            <StatusStepper currentStatus={contract.status} />
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="text"
                 value={ejarNumber}
                 onChange={(e) => setEjarNumber(e.target.value)}
-                placeholder="أدخل رقم العقد في شبكة إيجار"
-                className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#0b7a5a] dark:border-neutral-800 dark:bg-neutral-800 dark:text-white"
+                placeholder="رقم إيجار (اختياري)"
+                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0b7a5a] dark:border-neutral-800 dark:bg-neutral-800 dark:text-white"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                { value: "in_progress", label: "جاري التنفيذ", color: "blue" },
-                { value: "reviewing", label: "مراجعة", color: "amber" },
-                { value: "completed", label: "مكتمل", color: "emerald" },
-                { value: "rejected", label: "مرفوض", color: "red" },
-              ].map((s) => {
-                const colorClasses = {
-                  blue: "border-blue-300 hover:bg-blue-50 hover:border-blue-500 text-blue-700 dark:text-blue-400 dark:border-blue-900/40",
-                  amber: "border-amber-300 hover:bg-amber-50 hover:border-amber-500 text-amber-700 dark:text-amber-400 dark:border-amber-900/40",
-                  emerald: "border-emerald-300 hover:bg-emerald-50 hover:border-[#0b7a5a] text-[#0b7a5a] dark:text-emerald-400 dark:border-emerald-900/40",
-                  red: "border-red-300 hover:bg-red-50 hover:border-red-500 text-red-700 dark:text-red-400 dark:border-red-900/40",
-                }[s.color as "blue" | "amber" | "emerald" | "red"];
-                return (
-                  <button
-                    key={s.value}
-                    onClick={() => onUpdate(contract.id, s.value, ejarNumber || undefined)}
-                    className={cn(
-                      "rounded-xl border-2 bg-white px-3 py-2.5 text-xs font-bold transition-all dark:bg-neutral-800",
-                      colorClasses
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
+              <StatusActionPicker
+                currentStatus={contract.status}
+                onChange={(newStatus) => onUpdate(contract.id, newStatus, ejarNumber || undefined)}
+              />
             </div>
 
             {full && (
@@ -667,6 +643,147 @@ function Pair({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+// ============ STATUS STATE MACHINE ============
+const STATUS_FLOW = [
+  { value: "pending", label: "قيد الانتظار" },
+  { value: "in_progress", label: "جاري التنفيذ" },
+  { value: "reviewing", label: "مراجعة" },
+  { value: "completed", label: "مكتمل" },
+] as const;
+
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  draft: ["pending", "cancelled"],
+  pending: ["in_progress", "rejected", "cancelled"],
+  in_progress: ["reviewing", "completed", "rejected"],
+  reviewing: ["completed", "in_progress", "rejected"],
+  completed: ["active"],
+  active: ["expired", "cancelled"],
+  rejected: ["in_progress"],
+  cancelled: [],
+  expired: [],
+};
+
+function StatusStepper({ currentStatus }: { currentStatus: string }) {
+  const currentIdx = STATUS_FLOW.findIndex((s) => s.value === currentStatus);
+  const isRejected = currentStatus === "rejected" || currentStatus === "cancelled";
+
+  return (
+    <div className="flex items-center justify-between gap-1" dir="rtl">
+      {STATUS_FLOW.map((step, idx) => {
+        const isPast = idx < currentIdx;
+        const isActive = idx === currentIdx;
+        const isFuture = idx > currentIdx;
+        return (
+          <React.Fragment key={step.value}>
+            <div className="flex flex-1 flex-col items-center">
+              <div
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-[10px] font-bold transition-all",
+                  isActive && !isRejected && "scale-110 bg-[#0b7a5a] text-white shadow-md shadow-[#0b7a5a]/30",
+                  isActive && isRejected && "scale-110 bg-red-500 text-white",
+                  isPast && "bg-emerald-100 text-[#0b7a5a] dark:bg-emerald-950/40 dark:text-emerald-400",
+                  isFuture && "bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600"
+                )}
+              >
+                {isPast ? "✓" : idx + 1}
+              </div>
+              <span
+                className={cn(
+                  "mt-1 text-[9px] font-bold",
+                  isActive ? "text-neutral-800 dark:text-neutral-200" : "text-neutral-400"
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+            {idx < STATUS_FLOW.length - 1 && (
+              <div
+                className={cn(
+                  "mb-4 h-0.5 flex-1 rounded-full transition-colors",
+                  isPast ? "bg-emerald-300 dark:bg-emerald-900/40" : "bg-neutral-200 dark:bg-neutral-800"
+                )}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatusActionPicker({
+  currentStatus,
+  onChange,
+}: {
+  currentStatus: string;
+  onChange: (status: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
+  const labels: Record<string, string> = {
+    pending: "قيد الانتظار",
+    in_progress: "جاري التنفيذ",
+    reviewing: "مراجعة",
+    completed: "مكتمل",
+    active: "نشط",
+    rejected: "مرفوض",
+    cancelled: "إلغاء",
+    expired: "منتهي",
+  };
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  if (allowed.length === 0) {
+    return (
+      <button
+        disabled
+        className="rounded-2xl border-2 border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-bold text-neutral-400 dark:border-neutral-800 dark:bg-neutral-800/50"
+      >
+        لا توجد إجراءات متاحة
+      </button>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-2 rounded-2xl bg-[#0b7a5a] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#0b7a5a]/20"
+      >
+        <span>تغيير الحالة</span>
+        <svg className={cn("size-4 transition-transform", open && "rotate-180")} viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+          {allowed.map((status) => (
+            <button
+              key={status}
+              onClick={() => {
+                onChange(status);
+                setOpen(false);
+              }}
+              className="flex w-full items-center justify-between border-b border-neutral-100 px-4 py-3 text-right text-sm font-semibold transition-colors last:border-b-0 hover:bg-emerald-50 dark:border-neutral-800 dark:hover:bg-emerald-950/30"
+            >
+              <span>{labels[status] ?? status}</span>
+              <span className="text-[10px] text-neutral-400">→</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

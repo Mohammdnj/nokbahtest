@@ -6,6 +6,8 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../middleware/auth.php';
 require_once __DIR__ . '/../middleware/response.php';
 require_once __DIR__ . '/../middleware/roles.php';
+require_once __DIR__ . '/../middleware/contract-validate.php';
+require_once __DIR__ . '/../config/sms.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
@@ -80,8 +82,22 @@ elseif ($method === 'PUT' && $action === 'update-status') {
     $ejarNumber = $data['ejar_number'] ?? null;
     $notes = $data['notes'] ?? null;
 
-    $allowed = ['in_progress','reviewing','completed','rejected'];
-    if (!in_array($status, $allowed, true)) json_error('حالة غير مسموحة');
+    // Fetch current contract to validate transition + get phone for SMS
+    $stmt = $pdo->prepare("
+        SELECT c.id, c.status, c.contract_number, u.phone AS client_phone
+        FROM commercial_contracts c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.id = ?
+    ");
+    $stmt->execute([$id]);
+    $contract = $stmt->fetch();
+    if (!$contract) json_error('العقد غير موجود', 404);
+
+    if (!can_transition_status($contract['status'], $status)) {
+        json_error("لا يمكن تغيير الحالة من {$contract['status']} إلى $status", 400, [
+            'allowed' => allowed_status_transitions($contract['status']),
+        ]);
+    }
 
     $stmt = $pdo->prepare("
         UPDATE commercial_contracts
@@ -95,7 +111,21 @@ elseif ($method === 'PUT' && $action === 'update-status') {
     $stmt = $pdo->prepare("INSERT INTO contract_logs (contract_id, action, details, created_by) VALUES (?, 'status_change', ?, ?)");
     $stmt->execute([$id, $logMsg, $auth['user_id']]);
 
-    json_success(['id' => $id, 'status' => $status]);
+    // Auto-notify customer via SMS
+    $smsResult = null;
+    if (!empty($contract['client_phone'])) {
+        $smsResult = notifyContractStatus(
+            $contract['client_phone'],
+            $contract['contract_number'],
+            $status
+        );
+    }
+
+    json_success([
+        'id' => $id,
+        'status' => $status,
+        'sms_sent' => $smsResult['success'] ?? false,
+    ]);
 }
 
 else {
